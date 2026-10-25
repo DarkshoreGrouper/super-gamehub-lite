@@ -166,8 +166,8 @@ jobs:
 
       - name: Record baseline provenance
         run: |
-          cp output/GameHub-Lite.apk output/Super-Gamehub-Lite-baseline.apk
-          sha256sum output/Super-Gamehub-Lite-baseline.apk > output/SHA256SUMS
+          cp output/GameHub-Lite.apk "output/Super-Gamehub-Lite-${SUPER_VERSION_NAME}.apk"
+          sha256sum "output/Super-Gamehub-Lite-${SUPER_VERSION_NAME}.apk" > output/SHA256SUMS
           {
             echo "Project: Super Gamehub Lite"
             echo "Stage: mouse input diagnostics; no input optimization"
@@ -185,9 +185,9 @@ jobs:
       - name: Upload baseline APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
-          name: Super-Gamehub-Lite-baseline
+          name: Super-Gamehub-Lite-${{ env.SUPER_VERSION_NAME }}
           path: |
-            output/Super-Gamehub-Lite-baseline.apk
+            output/Super-Gamehub-Lite-${{ env.SUPER_VERSION_NAME }}.apk
             output/SHA256SUMS
             output/BASELINE.txt
             output/SIGNING.txt
