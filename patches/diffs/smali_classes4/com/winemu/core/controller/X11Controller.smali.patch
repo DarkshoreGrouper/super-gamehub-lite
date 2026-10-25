@@ -1,7 +1,14 @@
-diff --git a/smali_classes4/com/winemu/core/controller/X11Controller.smali b/smali_classes4/com/winemu/core/controller/X11Controller.smali
-index d35419214..38a426891 100644
 --- a/smali_classes4/com/winemu/core/controller/X11Controller.smali
 +++ b/smali_classes4/com/winemu/core/controller/X11Controller.smali
+@@ -623,7 +623,7 @@
+ 
+     move v5, p5
+ 
+-    invoke-virtual/range {v0 .. v5}, Lcom/winemu/core/server/XServer;->sendMouseEvent(FFIZZ)V
++    invoke-virtual/range {v0 .. v5}, Lcom/winemu/core/server/XServer;->sendMouseEventMeasured(FFIZZ)V
+ 
+     return-void
+ .end method
 @@ -748,3 +748,16 @@
      :cond_1
      return-void

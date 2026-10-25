@@ -1,0 +1,29 @@
+--- a/smali_classes4/com/xj/winemu/sidebar/WineActivityDrawerContent.smali
++++ b/smali_classes4/com/xj/winemu/sidebar/WineActivityDrawerContent.smali
+@@ -310,6 +310,8 @@
+     .line 28
+     iput p1, p0, Lcom/xj/winemu/sidebar/WineActivityDrawerContent;->p:I
+ 
++    invoke-static {p0}, Lcom/xj/winemu/sidebar/SuperDiagnostics;->bindDrawer(Landroid/view/View;)V
++
+     return-void
+ .end method
+ 
+@@ -435,6 +437,8 @@
+ .method private final N(ZI)V
+     .locals 3
+ 
++    invoke-static {p0}, Lcom/xj/winemu/sidebar/SuperDiagnostics;->hideDrawer(Landroid/view/View;)V
++
+     if-eqz p1, :cond_0
+ 
+     iput p2, p0, Lcom/xj/winemu/sidebar/WineActivityDrawerContent;->n:I
+@@ -826,6 +830,8 @@
+ 
+ .method public final a0(Ljava/lang/String;)V
+     .locals 3
++
++    invoke-static {p0}, Lcom/xj/winemu/sidebar/SuperDiagnostics;->hideDrawer(Landroid/view/View;)V
+ 
+     const-string v0, "key"
+ 

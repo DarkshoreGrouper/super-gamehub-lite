@@ -1,0 +1,11 @@
+--- a/smali_classes4/com/winemu/core/controller/X11Controller$setupInputManager$1.smali
++++ b/smali_classes4/com/winemu/core/controller/X11Controller$setupInputManager$1.smali
+@@ -43,7 +43,7 @@
+ 
+     move v5, p5
+ 
+-    invoke-virtual/range {v0 .. v5}, Lcom/winemu/core/server/XServer;->sendMouseEvent(FFIZZ)V
++    invoke-virtual/range {v0 .. v5}, Lcom/winemu/core/server/XServer;->sendMouseEventMeasured(FFIZZ)V
+ 
+     return-void
+ .end method

@@ -9,15 +9,15 @@
  
  # instance fields
  .field public A:Lkotlinx/coroutines/Job;
-@@ -80,6 +82,8 @@
+@@ -79,6 +81,8 @@
+ .field public s:Lcom/xj/pcvirtualbtn/inputcontrols/InputControlsManager;
  
  .field public t:Lcom/xj/pcvirtualbtn/inputcontrols/InputControlsView;
- 
-+.field public t0:Lcom/xj/winemu/view/RtsTouchOverlayView;
 +
++.field public t0:Lcom/xj/winemu/view/RtsTouchOverlayView;
+ 
  .field public u:Lcom/xj/winemu/utils/WineGameUsageTracker;
  
- .field public final v:F
 @@ -606,8 +610,6 @@
  
      move-result v0
@@ -35,10 +35,12 @@
      :goto_1
      return-void
  .end method
-@@ -1835,6 +1836,98 @@
-     return-object p0
- .end method
+@@ -1833,6 +1834,98 @@
+     move-result-object p0
  
+     return-object p0
++.end method
++
 +.method public static toggleRtsTouchOverlay(Z)V
 +    .locals 6
 +
@@ -129,19 +131,27 @@
 +    :cond_6
 +    :goto_0
 +    return-void
-+.end method
-+
+ .end method
+ 
  .method public static synthetic u1(Lcom/xj/winemu/WineActivity;)Lkotlin/Unit;
+@@ -3333,6 +3426,8 @@
+ .method public dispatchTouchEvent(Landroid/view/MotionEvent;)Z
      .locals 0
  
-@@ -3473,15 +3566,15 @@
++    invoke-static {p1}, Lcom/xj/winemu/sidebar/SuperDiagnostics;->onTouch(Landroid/view/MotionEvent;)V
++
+     invoke-super {p0, p1}, Landroid/app/Activity;->dispatchTouchEvent(Landroid/view/MotionEvent;)Z
+ 
+     move-result p1
+@@ -3473,15 +3568,15 @@
  .end method
  
  .method public final g2(Z)V
 -    .locals 4
-+    .locals 6
- 
+-
 -    if-eqz p1, :cond_4
++    .locals 6
++
 +    if-eqz p1, :cond_8
  
      invoke-virtual {p0}, Lcom/xj/winemu/WineActivity;->m2()V
@@ -153,12 +163,10 @@
  
      new-instance p1, Lcom/xj/pcvirtualbtn/inputcontrols/InputControlsManager;
  
-@@ -3555,15 +3648,90 @@
+@@ -3555,15 +3650,90 @@
  
      invoke-virtual {p1, v0}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
  
--    :cond_3
--    invoke-virtual {p0}, Lcom/xj/winemu/WineActivity;->X2()V
 +    new-instance v1, Lcom/xj/winemu/view/RtsTouchOverlayView;
 +
 +    invoke-direct {v1, p0}, Lcom/xj/winemu/view/RtsTouchOverlayView;-><init>(Landroid/content/Context;)V
@@ -194,10 +202,10 @@
 +    const/4 v2, 0x0
 +
 +    invoke-virtual {v1, v2}, Landroid/view/View;->setVisibility(I)V
- 
-     goto :goto_1
- 
-+    :cond_3
++
++    goto :goto_1
++
+     :cond_3
 +    const/16 v2, 0x8
 +
 +    invoke-virtual {v1, v2}, Landroid/view/View;->setVisibility(I)V
@@ -223,7 +231,7 @@
 +
 +    if-nez v2, :cond_5
 +
-     :cond_4
++    :cond_4
 +    const/4 v2, 0x0
 +
 +    :cond_5
@@ -235,8 +243,11 @@
 +    sput-object p0, Lcom/xj/winemu/WineActivity;->t1:Lcom/xj/winemu/WineActivity;
 +
 +    :cond_7
-+    invoke-virtual {p0}, Lcom/xj/winemu/WineActivity;->X2()V
-+
+     invoke-virtual {p0}, Lcom/xj/winemu/WineActivity;->X2()V
+ 
+-    goto :goto_1
+-
+-    :cond_4
 +    goto :goto_2
 +
 +    :cond_8
@@ -247,12 +258,21 @@
      return-void
  .end method
  
-@@ -4109,6 +4277,8 @@
+@@ -4108,6 +4278,8 @@
+     .locals 10
  
      invoke-super {p0, p1}, Lcom/xj/common/view/focus/focus/app/FocusableAppCompatActivity;->onCreate(Landroid/os/Bundle;)V
- 
-+    invoke-static {p0}, Lcom/xj/winemu/sidebar/BhFrameGenWriter;->applyFromPrefs(Landroid/content/Context;)V
 +
++    invoke-static {p0}, Lcom/xj/winemu/sidebar/BhFrameGenWriter;->applyFromPrefs(Landroid/content/Context;)V
+ 
      invoke-virtual {p0}, Lcom/xj/winemu/WineActivity;->S2()V
  
-     invoke-virtual {p0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
+@@ -5126,6 +5298,8 @@
+ 
+ .method public onDestroy()V
+     .locals 1
++
++    invoke-static {}, Lcom/xj/winemu/sidebar/SuperDiagnostics;->stop()V
+ 
+     invoke-virtual {p0}, Lcom/xj/winemu/WineActivity;->x2()V
+ 

@@ -14,6 +14,8 @@ automatically. The CI build currently generates a fresh debug signing key, so
 successive CI APKs are not guaranteed to install as updates to one another.
 Persistent signing is required before ongoing releases.
 
+The **SUPER** in-game sidebar tab contains opt-in input diagnostics. See
+[how to measure and copy a report](docs/input-diagnostics.md).
 The camera optimizer is planned, not implemented or proven.
 
 ---

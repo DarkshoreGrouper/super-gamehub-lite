@@ -237,3 +237,6 @@ smali_classes7/org/slf4j/helpers/Util.smali
 smali_classes7/tv/danmaku/ijk/media/exo2/CacheHelper.smali
 smali_classes7/tv/danmaku/ijk/media/exo2/ExoSourceManager.smali
 smali_classes5/com/xj/landscape/launcher/ui/main/me/childlist/TopPlatformChildListView$loadData$1.smali
+smali_classes4/com/xj/winemu/sidebar/WineActivityDrawerContent.smali
+smali_classes4/com/winemu/core/controller/X11Controller$setupInputManager$1.smali
+smali_classes4/com/winemu/core/server/XServer.smali
