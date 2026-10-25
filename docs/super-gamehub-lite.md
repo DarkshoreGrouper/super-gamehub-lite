@@ -24,18 +24,21 @@ the original GameHub base APK version required by its patch set.
 5. Download the baseline artifact containing the APK, SHA256SUMS and BASELINE.txt.
 
 No Android input hooks, game settings, Wine, Proton, FEX or DXVK are changed
-in this milestone. The upstream extension and patch sets remain intact.
+in this milestone. Only the application identity patches differ from upstream.
 The existing workflow also refreshes patches for drift detection.
 
-The baseline APK retains `gamehub.lite`, and upstream generates an ephemeral
-signing key on a clean runner. Therefore it cannot be treated as a drop-in
-upgrade or a side-by-side test build. Establish and audit a separate package
-identity, provider authorities, hardcoded package references and persistent
-signing before testing on the phone. Preserve the current working installation.
+The baseline APK uses `super.gamehub.lite` and the label Super Gamehub Lite.
+The manifest package, provider authorities, app-specific signature permission
+and launch action are namespaced separately from `gamehub.lite` for parallel
+installation. No literal `gamehub.lite` references exist in the extension or
+other upstream patch files. Runtime behavior still requires device testing.
+Android app data is separate; game containers/settings are not migrated.
+Upstream generates an ephemeral signing key on a clean runner. Establish
+persistent signing before ongoing updates. Preserve the working installation.
 
 ## Following milestones
 
-- Establish Super Gamehub Lite app identity and persistent APK signing.
+- Establish persistent APK signing (separate app identity is implemented).
 - Build and smoke-test the separately installable unoptimized APK on Fold 7.
 - Locate the swipe-camera path and measure incoming and outgoing mouse-event
   rates. Candidate entry: the patched GTouchUtils class; this is a starting

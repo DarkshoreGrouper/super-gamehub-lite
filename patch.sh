@@ -37,11 +37,11 @@ RELEASE="${RELEASE:-false}"
 VERSION="${VERSION:-}"
 
 # Base package name used in patches
-BASE_PACKAGE="gamehub.lite"
+BASE_PACKAGE="super.gamehub.lite"
 
 # Variant definitions as space-separated pairs: "name:package"
 # Order matters for release builds
-VARIANTS="base:gamehub.lite antutu:com.antutu.ABenchMark alt-antutu:com.antutu.benchmark.full ludashi:com.ludashi.aibench pubg:com.tencent.ig"
+VARIANTS="base:super.gamehub.lite antutu:com.antutu.ABenchMark alt-antutu:com.antutu.benchmark.full ludashi:com.ludashi.aibench pubg:com.tencent.ig"
 
 # Get package name for a variant
 get_variant_package() {

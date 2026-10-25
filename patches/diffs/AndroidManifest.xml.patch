@@ -3,7 +3,7 @@
 @@ -1,5 +1,5 @@
  <?xml version="1.0" encoding="utf-8"?>
 -<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:compileSdkVersion="35" android:compileSdkVersionCodename="15" package="com.xiaoji.egggame" platformBuildVersionCode="35" platformBuildVersionName="15">
-+<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:compileSdkVersion="35" android:compileSdkVersionCodename="15" package="gamehub.lite" platformBuildVersionCode="35" platformBuildVersionName="15">
++<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:compileSdkVersion="35" android:compileSdkVersionCodename="15" package="super.gamehub.lite" platformBuildVersionCode="35" platformBuildVersionName="15">
      <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
      <uses-permission android:name="android.permission.INTERNET"/>
      <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
@@ -75,8 +75,8 @@
 -    <uses-permission android:name="com.android.launcher.permission.READ_SETTINGS"/>
 -    <uses-permission android:name="com.bbk.launcher2.permission.READ_SETTINGS"/>
 -    <uses-permission android:name="com.bbk.launcher2.permission.WRITE_SETTINGS"/>
-+    <uses-permission android:name="gamehub.lite_com.bbk.launcher2.permission.READ_SETTINGS"/>
-+    <uses-permission android:name="gamehub.lite_com.bbk.launcher2.permission.WRITE_SETTINGS"/>
++    <uses-permission android:name="super.gamehub.lite_com.bbk.launcher2.permission.READ_SETTINGS"/>
++    <uses-permission android:name="super.gamehub.lite_com.bbk.launcher2.permission.WRITE_SETTINGS"/>
      <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
 -    <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>
 -    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION"/>
@@ -89,8 +89,8 @@
 -    <uses-permission android:name="com.xiaoji.egggame.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
 -    <uses-permission-sdk-23 android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 -    <uses-permission-sdk-23 android:name="android.permission.ACCESS_FINE_LOCATION"/>
-+    <permission android:name="gamehub.lite.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature"/>
-+    <uses-permission android:name="gamehub.lite.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
++    <permission android:name="super.gamehub.lite.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature"/>
++    <uses-permission android:name="super.gamehub.lite.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
      <supports-screens android:anyDensity="true" android:largeScreens="true" android:normalScreens="true" android:resizeable="true" android:smallScreens="true"/>
 -    <permission android:name="com.xiaoji.egggame.permission.JPUSH_MESSAGE" android:protectionLevel="signature"/>
 -    <uses-permission android:name="com.xiaoji.egggame.permission.JPUSH_MESSAGE"/>
@@ -148,7 +148,7 @@
 -        <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.gamedetail.GameDetailActivity" android:screenOrientation="sensorLandscape" android:theme="@style/llauncher_TranslucentStyle"/>
 +        <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:exported="true" android:name="com.xj.landscape.launcher.ui.gamedetail.GameDetailActivity" android:screenOrientation="sensorLandscape" android:theme="@style/llauncher_TranslucentStyle">
 +            <intent-filter>
-+                <action android:name="gamehub.lite.LAUNCH_GAME"/>
++                <action android:name="super.gamehub.lite.LAUNCH_GAME"/>
 +                <category android:name="android.intent.category.DEFAULT"/>
 +            </intent-filter>
 +        </activity>
@@ -179,7 +179,7 @@
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.preview.PreviewImageActivity" android:screenOrientation="sensorLandscape"/>
          <service android:name="com.xj.apk.update.service.DownloadService"/>
 -        <provider android:authorities="com.xiaoji.egggame.apkUpdateFileProvider" android:exported="false" android:grantUriPermissions="true" android:name="com.xj.apk.update.config.AppUpdateFileProvider">
-+        <provider android:authorities="gamehub.lite.apkUpdateFileProvider" android:exported="false" android:grantUriPermissions="true" android:name="com.xj.apk.update.config.AppUpdateFileProvider">
++        <provider android:authorities="super.gamehub.lite.apkUpdateFileProvider" android:exported="false" android:grantUriPermissions="true" android:name="com.xj.apk.update.config.AppUpdateFileProvider">
              <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/app_update_file"/>
          </provider>
          <activity android:configChanges="keyboardHidden|orientation|screenSize" android:name="com.xj.apk.update.view.UpdateDialogActivity" android:theme="@style/AppUpdate.UpdateDialog"/>
@@ -291,7 +291,7 @@
          <activity android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale" android:exported="false" android:name="com.xj.pcvirtualbtn.DisplayActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:name="com.xj.pcvirtualbtn.ControlsProfileListActivity" android:screenOrientation="sensorLandscape"/>
 -        <provider android:authorities="com.xiaoji.egggame.share.sharefileprovider" android:exported="false" android:grantUriPermissions="true" android:name="com.xj.common.share.ShareFileProvider">
-+        <provider android:authorities="gamehub.lite.share.sharefileprovider" android:exported="false" android:grantUriPermissions="true" android:name="com.xj.common.share.ShareFileProvider">
++        <provider android:authorities="super.gamehub.lite.share.sharefileprovider" android:exported="false" android:grantUriPermissions="true" android:name="com.xj.common.share.ShareFileProvider">
              <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/share_file_paths"/>
          </provider>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.common.utils.GetGpuInfo" android:screenOrientation="sensorLandscape"/>
@@ -315,7 +315,7 @@
          <meta-data android:name="android.notch_support" android:value="true"/>
          <activity android:name="com.lxj.xpopup.util.XPermission$PermissionActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
 -        <provider android:authorities="com.xiaoji.egggame.androidx-startup" android:exported="false" android:name="androidx.startup.InitializationProvider">
-+        <provider android:authorities="gamehub.lite.androidx-startup" android:exported="false" android:name="androidx.startup.InitializationProvider">
++        <provider android:authorities="super.gamehub.lite.androidx-startup" android:exported="false" android:name="androidx.startup.InitializationProvider">
              <meta-data android:name="com.drake.net.internal.NetInitializer" android:value="androidx.startup"/>
              <meta-data android:name="com.king.logx.initialize.LogXInitializer" android:value="androidx.startup"/>
              <meta-data android:name="androidx.lifecycle.ProcessLifecycleInitializer" android:value="androidx.startup"/>
@@ -342,8 +342,8 @@
 -        </activity>
 -        <property android:name="android.adservices.AD_SERVICES_CONFIG" android:resource="@xml/ga_ad_services_config"/>
 -        <provider android:authorities="com.xiaoji.egggame.luckProvider" android:exported="false" android:grantUriPermissions="true" android:name="com.luck.picture.lib.basic.PictureFileProvider">
-+        <provider android:authorities="gamehub.lite.therouter.TheRouteContentProvider" android:exported="false" android:name="com.therouter.InnerTheRouterContentProvider"/>
-+        <provider android:authorities="gamehub.lite.luckProvider" android:exported="false" android:grantUriPermissions="true" android:name="com.luck.picture.lib.basic.PictureFileProvider">
++        <provider android:authorities="super.gamehub.lite.therouter.TheRouteContentProvider" android:exported="false" android:name="com.therouter.InnerTheRouterContentProvider"/>
++        <provider android:authorities="super.gamehub.lite.luckProvider" android:exported="false" android:grantUriPermissions="true" android:name="com.luck.picture.lib.basic.PictureFileProvider">
              <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/ps_file_paths"/>
          </provider>
 -        <service android:enabled="true" android:foregroundServiceType="location" android:name="com.luck.picture.lib.service.ForegroundService"/>
@@ -351,7 +351,7 @@
          <activity android:configChanges="keyboardHidden|orientation|screenSize" android:exported="false" android:name="com.blankj.utilcode.util.UtilsTransActivity4MainProcess" android:theme="@style/ActivityTranslucent" android:windowSoftInputMode="stateAlwaysHidden"/>
          <activity android:configChanges="keyboardHidden|orientation|screenSize" android:exported="false" android:multiprocess="true" android:name="com.blankj.utilcode.util.UtilsTransActivity" android:theme="@style/ActivityTranslucent" android:windowSoftInputMode="stateAlwaysHidden"/>
 -        <provider android:authorities="com.xiaoji.egggame.utilcode.fileprovider" android:exported="false" android:grantUriPermissions="true" android:name="com.blankj.utilcode.util.UtilsFileProvider">
-+        <provider android:authorities="gamehub.lite.utilcode.fileprovider" android:exported="false" android:grantUriPermissions="true" android:name="com.blankj.utilcode.util.UtilsFileProvider">
++        <provider android:authorities="super.gamehub.lite.utilcode.fileprovider" android:exported="false" android:grantUriPermissions="true" android:name="com.blankj.utilcode.util.UtilsFileProvider">
              <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/util_code_provider_paths"/>
          </provider>
          <service android:exported="false" android:name="com.blankj.utilcode.util.MessengerUtils$ServerService">
@@ -396,7 +396,7 @@
 -        <service android:exported="false" android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService" android:permission="android.permission.BIND_JOB_SERVICE"/>
 -        <receiver android:exported="false" android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"/>
 -        <provider android:authorities="com.xiaoji.egggame.andoFileProvider" android:exported="false" android:grantUriPermissions="true" android:name="ando.file.core.FileProvider">
-+        <provider android:authorities="gamehub.lite.andoFileProvider" android:exported="false" android:grantUriPermissions="true" android:name="ando.file.core.FileProvider">
++        <provider android:authorities="super.gamehub.lite.andoFileProvider" android:exported="false" android:grantUriPermissions="true" android:name="ando.file.core.FileProvider">
              <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/ando_paths"/>
          </provider>
          <activity android:exported="false" android:name="com.xiaoji.sdk.debug.GcmDebugActivity" android:screenOrientation="landscape"/>
@@ -411,7 +411,7 @@
 -        <activity android:exported="true" android:name="cn.jpush.android.ui.PopWinActivity" android:theme="@style/JPushDialogStyle">
 +        <activity android:label="@string/adb_pairing" android:name="com.xiaoji.wifi.adb.AdbPairingTutorialActivity"/>
 +        <activity android:excludeFromRecents="true" android:exported="true" android:name="bin.mt.file.content.MTDataFilesWakeUpActivity" android:noHistory="true" android:taskAffinity="com.xiaoji.egggame.MTDataFilesWakeUp"/>
-+        <provider android:authorities="gamehub.lite.MTDataFilesProvider" android:exported="true" android:grantUriPermissions="true" android:name="bin.mt.file.content.MTDataFilesProvider" android:permission="android.permission.MANAGE_DOCUMENTS">
++        <provider android:authorities="super.gamehub.lite.MTDataFilesProvider" android:exported="true" android:grantUriPermissions="true" android:name="bin.mt.file.content.MTDataFilesProvider" android:permission="android.permission.MANAGE_DOCUMENTS">
              <intent-filter>
 -                <category android:name="android.intent.category.DEFAULT"/>
 -                <action android:name="cn.jpush.android.ui.PopWinActivity"/>

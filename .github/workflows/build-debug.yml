@@ -109,7 +109,7 @@ jobs:
             echo "Source APK: $SOURCE_APK_URL"
             echo "Source MD5: $SOURCE_APK_MD5"
             echo "Apktool: $APKTOOL_VERSION"
-            echo "Package: gamehub.lite (upstream baseline identity)"
+            echo "Package: super.gamehub.lite (separate application identity)"
             echo "Signing: per-build debug key; not an update to the official APK"
           } > output/BASELINE.txt
 

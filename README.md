@@ -6,11 +6,13 @@ First milestone: reproduce the upstream APK build before changing camera input.
 See [the baseline and development plan](docs/super-gamehub-lite.md).
 
 The repository contains APK patches and tooling, not the complete GameHub source.
-The baseline uses the upstream `gamehub.lite` application identity and is signed
-with a newly generated debug key. It is not a side-by-side install alongside
-GameHub Lite, nor a signature-compatible update. Do not uninstall your working
-installation to test this baseline. Separate identity and persistent signing
-must be verified before an installable experimental release.
+The baseline uses `super.gamehub.lite` and the label **Super Gamehub Lite**,
+so it can be installed alongside normal GameHub Lite (`gamehub.lite`). Provider
+authorities, signature permissions and the launch action use the new namespace.
+Each app has separate Android app data; containers and settings do not migrate
+automatically. The CI build currently generates a fresh debug signing key, so
+successive CI APKs are not guaranteed to install as updates to one another.
+Persistent signing is required before ongoing releases.
 
 The camera optimizer is planned, not implemented or proven.
 

@@ -5,7 +5,7 @@
      <string name="analogscroll_none">左右スティック同時</string>
      <string name="analogscroll_right">右スティック</string>
 -    <string name="app_name">蓋世ゲーム</string>
-+    <string name="app_name">GameHub Lite</string>
++    <string name="app_name">Super Gamehub Lite</string>
      <string name="app_update_background_downloading">バックグラウンドでダウンロード中…</string>
      <string name="app_update_click_hint">クリックしてインストール</string>
      <string name="app_update_close">閉じる</string>

@@ -5,7 +5,7 @@
      <string name="ando_str_single_file_type_mismatch">文件类型不匹配</string>
      <string name="androidx_startup">androidx.startup</string>
 -    <string name="app_name">GameHub</string>
-+    <string name="app_name">GameHub Lite</string>
++    <string name="app_name">Super Gamehub Lite</string>
      <string name="app_update_background_downloading">Downloading new version in the background…</string>
      <string name="app_update_click_hint">Click to install</string>
      <string name="app_update_close">Close</string>
