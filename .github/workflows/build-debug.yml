@@ -1,4 +1,4 @@
-name: Build Debug APK
+name: Super Gamehub Lite - Baseline APK
 
 on:
   workflow_dispatch:
@@ -17,6 +17,13 @@ on:
       - 'patch.sh'
       - 'generate-patches.sh'
       - '.github/workflows/build-debug.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: baseline-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   SOURCE_APK_URL: https://github.com/Producdevity/gamehub-lite/releases/download/v5.1.0-patch/GameHub-5.1.0.apk
@@ -90,11 +97,31 @@ jobs:
       - name: Build debug APK
         run: ./patch.sh
 
-      - name: Upload debug APK
+      - name: Record baseline provenance
+        run: |
+          cp output/GameHub-Lite.apk output/Super-Gamehub-Lite-baseline.apk
+          sha256sum output/Super-Gamehub-Lite-baseline.apk > output/SHA256SUMS
+          {
+            echo "Project: Super Gamehub Lite"
+            echo "Stage: upstream baseline; no input optimization"
+            echo "Repository: $GITHUB_REPOSITORY"
+            echo "Commit: $GITHUB_SHA"
+            echo "Source APK: $SOURCE_APK_URL"
+            echo "Source MD5: $SOURCE_APK_MD5"
+            echo "Apktool: $APKTOOL_VERSION"
+            echo "Package: gamehub.lite (upstream baseline identity)"
+            echo "Signing: per-build debug key; not an update to the official APK"
+          } > output/BASELINE.txt
+
+      - name: Upload baseline APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
-          name: GameHub-Lite-debug
-          path: output/GameHub-Lite.apk
+          name: Super-Gamehub-Lite-baseline
+          path: |
+            output/Super-Gamehub-Lite-baseline.apk
+            output/SHA256SUMS
+            output/BASELINE.txt
+          if-no-files-found: error
           retention-days: 30
 
       # Regenerate patches from the built APK and compare against repo.
