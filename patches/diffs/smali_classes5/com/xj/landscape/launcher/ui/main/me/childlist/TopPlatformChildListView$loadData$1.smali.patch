@@ -1,0 +1,11 @@
+--- a/smali_classes5/com/xj/landscape/launcher/ui/main/me/childlist/TopPlatformChildListView$loadData$1.smali
++++ b/smali_classes5/com/xj/landscape/launcher/ui/main/me/childlist/TopPlatformChildListView$loadData$1.smali
+@@ -200,7 +200,7 @@
+ 
+     sget-object v1, Lcom/xj/common/data/list/TopPlatFormType;->PcEmulator:Lcom/xj/common/data/list/TopPlatFormType;
+ 
+-    if-ne p1, v1, :cond_4
++    goto :cond_4
+ 
+     sget-object v4, Lcom/xj/landscape/launcher/data/repository/NewsRepo;->a:Lcom/xj/landscape/launcher/data/repository/NewsRepo;
+ 

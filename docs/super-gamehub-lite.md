@@ -58,3 +58,14 @@ measured on the device. A direct Wine input bridge remains a later investigation
 GitHub fork created at https://github.com/DarkshoreGrouper/super-gamehub-lite.
 Baseline setup is prepared for the fork. CI and device validation are tracked
 by workflow run results; preparation alone does not establish a verified build.
+
+## Launcher appearance
+
+- A cyan Super Gamehub Lite title is placed in the launcher activity header,
+  outside the dashboard's scrolling page container. It appears between the
+  dashboard tab controls and status icons. Very narrow widths may ellipsize it.
+- The PC Emulator dashboard skips the news repository request and follows the
+  existing empty-list path, preserving PC import/settings buttons and the
+  telemetry-report information banner. The news heading and cards are not
+  supplied to the list adapter. No server-side API changes are needed.
+- This title belongs to the launcher; it is not an overlay over a running game.
