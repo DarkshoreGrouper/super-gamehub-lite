@@ -1,30 +1,15 @@
 --- a/smali_classes4/com/winemu/core/server/XServer.smali
 +++ b/smali_classes4/com/winemu/core/server/XServer.smali
-@@ -260,3 +260,27 @@
-         .end annotation
-     .end param
- .end method
+@@ -4,0 +5,2 @@
++.implements Lcom/xj/winemu/sidebar/SuperMouseBatcher$Sender;
 +
-+# Super diagnostics: arguments and call order are preserved, including buttons.
+@@ -262,0 +265,9 @@
++
++# SUPER input: direct native sender interface; no reflection or recursive wrapper.
 +.method public final sendMouseEventMeasured(FFIZZ)V
-+    .locals 2
++    .locals 0
 +
-+    sget-boolean v0, Lcom/xj/winemu/sidebar/SuperInputStats;->enabled:Z
-+
-+    if-eqz v0, :super_passthrough
-+
-+    invoke-static {}, Ljava/lang/System;->nanoTime()J
-+
-+    move-result-wide v0
-+
-+    invoke-virtual/range {p0 .. p5}, Lcom/winemu/core/server/XServer;->sendMouseEvent(FFIZZ)V
-+
-+    invoke-static {v0, v1, p3}, Lcom/xj/winemu/sidebar/SuperInputStats;->recordMouse(JI)V
-+
-+    return-void
-+
-+    :super_passthrough
-+    invoke-virtual/range {p0 .. p5}, Lcom/winemu/core/server/XServer;->sendMouseEvent(FFIZZ)V
++    invoke-static/range {p0 .. p5}, Lcom/xj/winemu/sidebar/SuperMouseInput;->send(Lcom/xj/winemu/sidebar/SuperMouseBatcher$Sender;FFIZZ)V
 +
 +    return-void
 +.end method

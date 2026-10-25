@@ -9,6 +9,9 @@ public final class SuperInputStats {
     private static long start = System.nanoTime(), stopped = start;
     private static long touchEvents, touchSamples, mouseCalls, mouseMoves;
     private static long wheelCalls, otherCalls, totalNanos, maxNanos;
+    private static long incomingMoves, incomingRelativeMoves;
+    private static boolean batchingEnabled, batchingAtStart;
+    private static int batchingChanges;
     private static long sampledAt = start, sampledTouch, sampledSamples, sampledMoves;
     private static double touchRate, sampleRate, moveRate, peakMoveRate;
 
@@ -28,8 +31,22 @@ public final class SuperInputStats {
         start = sampledAt = stopped = System.nanoTime();
         touchEvents = touchSamples = mouseCalls = mouseMoves = 0;
         wheelCalls = otherCalls = totalNanos = maxNanos = 0;
+        incomingMoves = incomingRelativeMoves = 0;
+        batchingAtStart = batchingEnabled;
+        batchingChanges = 0;
         sampledTouch = sampledSamples = sampledMoves = 0;
         touchRate = sampleRate = moveRate = peakMoveRate = 0;
+    }
+
+    public static synchronized void setBatchingEnabled(boolean value) {
+        if (enabled && batchingEnabled != value) batchingChanges++;
+        batchingEnabled = value;
+    }
+
+    public static synchronized void recordMouseInput(int kind, boolean relative) {
+        if (!enabled || kind != 0) return;
+        incomingMoves++;
+        if (relative) incomingRelativeMoves++;
     }
 
     /** One ACTION_MOVE dispatch; samples include history and each pointer. */
@@ -81,9 +98,13 @@ public final class SuperInputStats {
         sample(now);
         double seconds = Math.max(0, now - start) / 1e9;
         return String.format(Locale.US,
-            "Super Gamehub Lite - Mouse Input Diagnostics v1\n" +
+            "Super Gamehub Lite - Mouse Input Diagnostics v2\n" +
+            "Experimental relative mouse batching at start: %s\n" +
+            "Batching at report: %s; changes during recording: %d\n" +
+            "Batching target: approximately 60 Hz (17 ms window); boundary flushes may exceed target\n" +
             "State: %s\nSession duration: %.2f s\n" +
             "Touch move dispatches: %d\nTouch samples (history x pointers): %d\n" +
+            "Incoming mouse movement calls: %d\nIncoming relative movement calls: %d\n" +
             "Native mouse calls: %d\nMouse movement calls: %d\n" +
             "Wheel calls: %d\nOther mouse calls: %d\n" +
             "Session mean touch dispatches/s: %.2f\nSession mean mouse moves/s: %.2f\n" +
@@ -94,8 +115,11 @@ public final class SuperInputStats {
             "Mouse counters cover both Java callers of XServer.sendMouseEvent.\n" +
             "Send timing measures synchronous JNI call time, not Wine queue depth or game latency.\n" +
             "Rates are sampled on refresh; peaks are sampling-window peaks, not instantaneous peaks.\n" +
-            "No input optimization or automatic FPS measurement is enabled.\n",
-            enabled ? "recording" : "stopped", seconds, touchEvents, touchSamples,
+            "When enabled, batching combines relative movement deltas on the main thread only.\n" +
+            "Absolute movement, buttons and wheel events remain immediate after pending movement is flushed.\n" +
+            "No automatic FPS measurement is enabled.\n",
+            batchingAtStart ? "ON" : "OFF", batchingEnabled ? "ON" : "OFF", batchingChanges,
+            enabled ? "recording" : "stopped", seconds, touchEvents, touchSamples, incomingMoves, incomingRelativeMoves,
             mouseCalls, mouseMoves, wheelCalls, otherCalls,
             seconds == 0 ? 0 : touchEvents / seconds,
             seconds == 0 ? 0 : mouseMoves / seconds, peakMoveRate,

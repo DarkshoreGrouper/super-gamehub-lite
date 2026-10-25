@@ -54,11 +54,12 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Test input diagnostics counters
+      - name: Test input diagnostics and mouse batching
         run: |
           mkdir -p stats-tests
-          javac -source 8 -target 8 -d stats-tests extension/SuperInputStats.java tests/SuperInputStatsTest.java
+          javac -source 8 -target 8 -d stats-tests extension/SuperInputStats.java extension/SuperMouseBatcher.java tests/SuperInputStatsTest.java tests/SuperMouseBatcherTest.java
           java -cp stats-tests SuperInputStatsTest
+          java -cp stats-tests SuperMouseBatcherTest
 
       - name: Test APK version metadata
         run: python3 -m unittest discover -s tests -p 'test_apk_version.py'
@@ -170,7 +171,7 @@ jobs:
           sha256sum "output/Super-Gamehub-Lite-${SUPER_VERSION_NAME}.apk" > output/SHA256SUMS
           {
             echo "Project: Super Gamehub Lite"
-            echo "Stage: mouse input diagnostics; no input optimization"
+            echo "Stage: optional relative mouse batching and input diagnostics"
             echo "Repository: $GITHUB_REPOSITORY"
             echo "Commit: $GITHUB_SHA"
             echo "Source APK: $SOURCE_APK_URL"

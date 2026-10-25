@@ -62,6 +62,10 @@ public final class SuperDiagnostics {
     }
 
     public static void onTouch(MotionEvent event) {
+        int action = event.getActionMasked();
+        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL
+            || action == MotionEvent.ACTION_POINTER_UP || action == MotionEvent.ACTION_DOWN
+            || action == MotionEvent.ACTION_POINTER_DOWN) SuperMouseInput.flush();
         if (SuperInputStats.enabled && event.getActionMasked() == MotionEvent.ACTION_MOVE)
             SuperInputStats.recordTouch(event.getHistorySize(), event.getPointerCount());
     }
@@ -128,7 +132,10 @@ public final class SuperDiagnostics {
         }
     }
 
-    public static void stop() { SuperInputStats.setEnabled(false); }
+    public static void stop() {
+        SuperMouseInput.setEnabled(false);
+        SuperInputStats.setEnabled(false);
+    }
 
     private static TextView text(Context c, String value, int size) {
         TextView t = new TextView(c);
@@ -140,6 +147,9 @@ public final class SuperDiagnostics {
     private static final class DiagnosticsPanel extends ScrollView implements Runnable {
         private final TextView counters;
         private final Switch toggle;
+        private final Switch batchToggle;
+        private final Button reportsHeader;
+        private final LinearLayout reports;
         private final TextView savedList;
         private final EditText label;
         private final SharedPreferences preferences;
@@ -158,41 +168,65 @@ public final class SuperDiagnostics {
             TextView title = text(c,"Super Gamehub Lite",20);
             title.setTextColor(CYAN); title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
             column.addView(title);
-            column.addView(text(c,"Mouse Input Diagnostics",16));
+            batchToggle = new Switch(c);
+            batchToggle.setText("Experimental mouse batching (~60 Hz)");
+            batchToggle.setTextColor(Color.WHITE);
+            batchToggle.setChecked(SuperMouseInput.isEnabled());
+            column.addView(batchToggle,new LinearLayout.LayoutParams(-1,dp(c,64)));
+            column.addView(text(c,"Combines relative mouse movement in 17 ms windows. May improve camera-swipe performance; compare ON and OFF. Absolute cursor movement is unchanged. Off by default for each game session.",12));
+            reportsHeader = new Button(c);
+            column.addView(reportsHeader,new LinearLayout.LayoutParams(-1,-2));
+            reports = new LinearLayout(c);
+            reports.setOrientation(LinearLayout.VERTICAL);
+            reports.setVisibility(preferences.getBoolean("reports_expanded",false) ? View.VISIBLE : View.GONE);
+            column.addView(reports,new LinearLayout.LayoutParams(-1,-2));
+            reportsHeader.setOnClickListener(v -> {
+                boolean expanded = reports.getVisibility() != View.VISIBLE;
+                reports.setVisibility(expanded ? View.VISIBLE : View.GONE);
+                preferences.edit().putBoolean("reports_expanded",expanded).apply();
+                refresh();
+            });
+            reports.addView(text(c,"Mouse Input Diagnostics",16));
             toggle = new Switch(c);
             toggle.setText("Record + show overlay"); toggle.setTextColor(Color.WHITE);
             toggle.setChecked(SuperInputStats.enabled);
-            column.addView(toggle,new LinearLayout.LayoutParams(-1,dp(c,52)));
+            reports.addView(toggle,new LinearLayout.LayoutParams(-1,dp(c,52)));
             counters = text(c,"",13);
             counters.setTypeface(Typeface.MONOSPACE);
-            column.addView(counters);
+            reports.addView(counters);
             Button reset = new Button(c); reset.setText("Reset measurements");
-            column.addView(reset,new LinearLayout.LayoutParams(-1,-2));
+            reports.addView(reset,new LinearLayout.LayoutParams(-1,-2));
             Button copy = new Button(c); copy.setText("Copy report");
-            column.addView(copy,new LinearLayout.LayoutParams(-1,-2));
+            reports.addView(copy,new LinearLayout.LayoutParams(-1,-2));
             label = new EditText(c);
             label.setTextColor(Color.WHITE);
             label.setHintTextColor(0xffb7c5d8);
             label.setHint("Test label / observed FPS (optional)");
             label.setMaxLines(3);
-            column.addView(label,new LinearLayout.LayoutParams(-1,-2));
+            reports.addView(label,new LinearLayout.LayoutParams(-1,-2));
             Button save = new Button(c); save.setText("Stop + save report");
-            column.addView(save,new LinearLayout.LayoutParams(-1,-2));
+            reports.addView(save,new LinearLayout.LayoutParams(-1,-2));
             savedList = text(c,"",12);
-            column.addView(savedList);
+            reports.addView(savedList);
             Button copyAll = new Button(c); copyAll.setText("Copy all saved reports");
-            column.addView(copyAll,new LinearLayout.LayoutParams(-1,-2));
+            reports.addView(copyAll,new LinearLayout.LayoutParams(-1,-2));
             Button clear = new Button(c); clear.setText("Clear saved reports");
-            column.addView(clear,new LinearLayout.LayoutParams(-1,-2));
-            column.addView(text(c,"Record a test, add an optional label/FPS, then Stop + save report. Enable recording again for a fresh test. Copy all saved reports when finished. Saved reports survive closing the game and app updates; Reset measurements only resets the current session.\n\nCounts include all touch movement, including controls and menu gestures. Send time measures the native call, not total Wine or game latency. Input is unchanged.",12));
+            reports.addView(clear,new LinearLayout.LayoutParams(-1,-2));
+            reports.addView(text(c,"Choose batching ON or OFF before each test. Record, add a label/FPS, then Stop + save report. Enable recording again for a fresh test. Copy all saved reports when finished. Saved reports survive app updates. Collapsing Reports keeps recording active.\n\nNative movement counts are actual forwarded calls; incoming counts show the original traffic. Send time measures the native call, not total Wine or game latency.",12));
+            batchToggle.setOnCheckedChangeListener((button,checked) -> {
+                SuperMouseInput.setEnabled(checked);
+                refresh();
+            });
             toggle.setOnCheckedChangeListener((button,checked) -> {
+                SuperMouseInput.flush();
                 SuperInputStats.setEnabled(checked);
                 updateOverlay(c);
                 refresh();
             });
-            reset.setOnClickListener(v -> { SuperInputStats.reset(); refresh(); });
+            reset.setOnClickListener(v -> { SuperMouseInput.flush(); SuperInputStats.reset(); refresh(); });
             copy.setOnClickListener(v -> copyReport(c,currentReport(c)));
             save.setOnClickListener(v -> {
+                SuperMouseInput.flush();
                 SuperInputStats.setEnabled(false);
                 updateOverlay(c);
                 String name = label.getText().toString().trim();
@@ -232,6 +266,9 @@ public final class SuperDiagnostics {
             refresh();
         }
         void refresh() {
+            if (batchToggle.isChecked() != SuperMouseInput.isEnabled()) batchToggle.setChecked(SuperMouseInput.isEnabled());
+            reportsHeader.setText((reports.getVisibility() == View.VISIBLE ? "▼" : "▶") + " Reports (" + saved.length() + " saved)"
+                + (SuperInputStats.enabled ? " · recording" : ""));
             if (toggle.isChecked() != SuperInputStats.enabled) toggle.setChecked(SuperInputStats.enabled);
             counters.setText((SuperInputStats.enabled ? "RECORDING\n" : "STOPPED (last session)\n") + SuperInputStats.summary());
             StringBuilder list = new StringBuilder("Saved reports: " + saved.length());

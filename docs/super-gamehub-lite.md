@@ -43,10 +43,11 @@ See signing-and-updates.md for the one-time migration and future updates.
 - Locate the swipe-camera path and measure incoming and outgoing mouse-event
   rates. Candidate entry: the patched GTouchUtils class; this is a starting
   point for inspection, not a confirmed injection location.
-- Implement an opt-in, per-game relative-camera optimizer with original and
-  optimized modes. Accumulate movement without losing fractional deltas;
-  compare 120/90/60 Hz output; flush pending movement on lift. Preserve click
-  and keyboard timing and avoid doing injection on the rendering thread.
+- An opt-in relative mouse batching experiment is implemented in SUPER:
+  one 17 ms accumulator on the Android main thread, preserving delta sums and
+  flushing before mouse button changes and at gesture end. Default remains OFF.
+  Reports are collapsible and include incoming/forwarded counters and mode.
+  Compare its on-device performance and camera feel before tuning intervals.
 - Compare the same WoW scene, swipe and runtime settings, recording FPS,
   event rate, responsiveness and total camera displacement.
 
