@@ -12,6 +12,7 @@ public final class SuperInputStats {
     private static long incomingMoves, incomingRelativeMoves;
     private static boolean batchingEnabled, batchingAtStart;
     private static int batchingChanges;
+    private static int rateHz = 60, rateAtStart = 60, rateChanges;
     private static long sampledAt = start, sampledTouch, sampledSamples, sampledMoves;
     private static double touchRate, sampleRate, moveRate, peakMoveRate;
 
@@ -34,6 +35,8 @@ public final class SuperInputStats {
         incomingMoves = incomingRelativeMoves = 0;
         batchingAtStart = batchingEnabled;
         batchingChanges = 0;
+        rateAtStart = rateHz;
+        rateChanges = 0;
         sampledTouch = sampledSamples = sampledMoves = 0;
         touchRate = sampleRate = moveRate = peakMoveRate = 0;
     }
@@ -41,6 +44,11 @@ public final class SuperInputStats {
     public static synchronized void setBatchingEnabled(boolean value) {
         if (enabled && batchingEnabled != value) batchingChanges++;
         batchingEnabled = value;
+    }
+
+    public static synchronized void setBatchingRateHz(int value) {
+        if (enabled && rateHz != value) rateChanges++;
+        rateHz = value;
     }
 
     public static synchronized void recordMouseInput(int kind, boolean relative) {
@@ -98,10 +106,12 @@ public final class SuperInputStats {
         sample(now);
         double seconds = Math.max(0, now - start) / 1e9;
         return String.format(Locale.US,
-            "Super Gamehub Lite - Mouse Input Diagnostics v2\n" +
+            "Super Gamehub Lite - Mouse Input Diagnostics v3\n" +
             "Experimental relative mouse batching at start: %s\n" +
             "Batching at report: %s; changes during recording: %d\n" +
-            "Batching target: approximately 60 Hz (17 ms window); boundary flushes may exceed target\n" +
+            "Selected batching rate at start: %d Hz\n" +
+            "Selected rate at report: %d Hz (%d ms window); rate changes during recording: %d\n" +
+            "Selected Hz sets a batching window, not an exact steady output rate; boundary flushes bypass the window\n" +
             "State: %s\nSession duration: %.2f s\n" +
             "Touch move dispatches: %d\nTouch samples (history x pointers): %d\n" +
             "Incoming mouse movement calls: %d\nIncoming relative movement calls: %d\n" +
@@ -119,6 +129,7 @@ public final class SuperInputStats {
             "Absolute movement, buttons and wheel events remain immediate after pending movement is flushed.\n" +
             "No automatic FPS measurement is enabled.\n",
             batchingAtStart ? "ON" : "OFF", batchingEnabled ? "ON" : "OFF", batchingChanges,
+            rateAtStart, rateHz, Math.round(1000.0f / rateHz), rateChanges,
             enabled ? "recording" : "stopped", seconds, touchEvents, touchSamples, incomingMoves, incomingRelativeMoves,
             mouseCalls, mouseMoves, wheelCalls, otherCalls,
             seconds == 0 ? 0 : touchEvents / seconds,

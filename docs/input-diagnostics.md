@@ -1,19 +1,29 @@
-# Mouse Input Diagnostics v2 and experimental batching
+# Mouse Input Diagnostics v3 and experimental batching
 
 Open the in-game sidebar and select **SUPER**, the fourth settings tab below
 Controls, Performance and Settings. The keyboard shortcut remains separate.
-The experimental batching switch stays visible. Tap **Reports** to expand or
+The experimental batching switch and native stepped rate slider stay visible.
+The slider reuses SidebarProgressItemView / SingleDragSeekbar from the
+Performance tab (40–60 in steps of 5). Tap **Reports** to expand or
 collapse all recording, saved-report and copy controls. Collapsing does not
 stop recording, and the header shows when recording remains active. Expansion
 state is remembered; saved reports from older app versions remain available.
+Reports reuses SidebarClickItemView, its native arrow (90° collapsed, 270°
+expanded, 300 ms rotation), and winemu_bg_mapping_rv for the expanded body.
+Native widgets are constructed and configured through reflection only in UI
+setup/callbacks; no reflection was added to input dispatch.
 
 ## Optional batching experiment
 
 **Experimental mouse batching** is OFF for each new game session and is
 independent of diagnostic recording. ON combines only relative movement
 (kind 0, final boolean true) arriving on the main thread. The sum of deltas is
-held in one accumulator and delivered after 17 ms, aiming to reduce send
-frequency to at most roughly 60/s during continuous compatible traffic. Actual
+held in one accumulator. The selected nominal rate maps to a rounded
+window: 40 Hz = 25 ms, 45 = 22 ms, 50 = 20 ms, 55 = 18 ms, 60 = 17 ms.
+60 Hz is the default and preserves the original experiment. The chosen rate
+is remembered across restarts; enabling batching still defaults to OFF for
+each game session. Changing the rate flushes any pending movement before
+applying the new interval. Actual
 rate depends on event timing; this is not a display-frame or FPS limiter.
 The first event sets the deadline; later events never postpone it. Scheduling
 can add more delay if the Android main thread is busy.
@@ -65,7 +75,8 @@ session available to copy. Destroying WineActivity stops recording.
   describe actual forwarded JNI calls after optional batching. Both Java
   callers are covered. Wheel events (kind 4) and other mouse events are counted
   separately, not included in movement rate. Reports include batching mode at
-  recording start, mode at report time, and changes while recording.
+  recording start, mode at report time, and changes while recording. Selected
+  rates at recording start/report time and rate changes are included too.
 - Native send avg/max measures the synchronous sendMouseEvent JNI call. It does
   not measure Wine queue depth, processing after JNI returns, game latency,
   input-to-photon latency, or every historical sample's forwarding time.
@@ -104,6 +115,7 @@ runs these tests before building. Extension sources compile against Android 34.
 Targeted assembly of the patched Smali classes is checked locally with apktool.
 Batcher tests also cover displacement sums, bounded scheduling, button/wheel/
 absolute order, disable and tail flushes, thread/sender/flag boundaries, timer
-failure fallback, a long simulated stream, and incoming/forwarded mode reports.
+failure fallback, a long simulated stream, all five supported rates, invalid
+rates, draining during rate changes, and incoming/forwarded mode/rate reports.
 Full fork build and on-phone interaction are validated separately through CI
 and the installed APK; compilation alone does not establish runtime correctness.

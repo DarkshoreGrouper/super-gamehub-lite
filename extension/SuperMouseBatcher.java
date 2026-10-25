@@ -9,9 +9,10 @@ public final class SuperMouseBatcher {
         boolean postDelayed(Runnable task, long delayMillis);
         void removeCallbacks(Runnable task);
     }
-    public static final long WINDOW_MS = 17; // approximately 60 Hz
+    public static final int DEFAULT_RATE_HZ = 60;
     private final Scheduler scheduler;
     private boolean enabled;
+    private int rateHz = DEFAULT_RATE_HZ;
     private Sender pending;
     private boolean pendingDown;
     private double dx, dy;
@@ -21,6 +22,20 @@ public final class SuperMouseBatcher {
 
     public SuperMouseBatcher(Scheduler scheduler) { this.scheduler = scheduler; }
     public synchronized boolean isEnabled() { return enabled; }
+    public static boolean isSupportedRateHz(int rate) {
+        return rate >= 40 && rate <= 60 && rate % 5 == 0;
+    }
+    public static long windowMillisForRate(int rate) {
+        if (!isSupportedRateHz(rate)) throw new IllegalArgumentException("Unsupported batching rate: " + rate);
+        return Math.round(1000.0f / rate);
+    }
+    public synchronized int getRateHz() { return rateHz; }
+    public synchronized void setRateHz(int rate) {
+        windowMillisForRate(rate); // Validate before touching the current batch.
+        if (rateHz == rate) return;
+        flush();
+        rateHz = rate;
+    }
     public synchronized void setEnabled(boolean value) {
         if (enabled == value) return;
         flush();
@@ -43,7 +58,7 @@ public final class SuperMouseBatcher {
         dx += x;
         dy += y;
         // The first event sets the deadline; subsequent events never postpone it.
-        if (first && !scheduler.postDelayed(delivery,WINDOW_MS)) flush();
+        if (first && !scheduler.postDelayed(delivery,windowMillisForRate(rateHz))) flush();
     }
 
     public synchronized void flush() {

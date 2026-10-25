@@ -16,9 +16,9 @@ public final class SuperMouseBatcherTest {
         }
     }
     static final class Timer implements SuperMouseBatcher.Scheduler {
-        Runnable task; int posted; boolean accept=true;
+        Runnable task; int posted; boolean accept=true; long expectedDelay=17;
         public boolean postDelayed(Runnable task,long delay) {
-            check(delay==17,"17 ms deadline"); check(this.task==null,"only one pending callback");
+            check(delay==expectedDelay,"selected batching deadline"); check(this.task==null,"only one pending callback");
             posted++; if (!accept) return false; this.task=task; return true;
         }
         public void removeCallbacks(Runnable task) { if (this.task==task) this.task=null; }
@@ -73,13 +73,35 @@ public final class SuperMouseBatcherTest {
         float totalX=0,totalY=0; for(Event e:sink.events) { totalX+=e.x; totalY+=e.y; }
         near(totalX,14400); near(totalY,7200);
 
-        SuperInputStats.setBatchingEnabled(true); SuperInputStats.setEnabled(true);
+        Timer rateTimer=new Timer(); Sink rateSink=new Sink(); SuperMouseBatcher rates=new SuperMouseBatcher(rateTimer);
+        rates.setEnabled(true);
+        int[] choices={40,45,50,55,60}; long[] windows={25,22,20,18,17};
+        for(int i=0;i<choices.length;i++) {
+            rates.setRateHz(choices[i]); rateTimer.expectedDelay=windows[i];
+            move(rates,rateSink,2,3); move(rates,rateSink,4,5);
+            check(rates.getRateHz()==choices[i],"selected rate retained");
+            rateTimer.fire(); near(rateSink.events.get(i).x,6); near(rateSink.events.get(i).y,8);
+        }
+        move(rates,rateSink,9,10);
+        rates.setRateHz(40);
+        check(rateTimer.task==null && rateSink.events.size()==6,"changing rate flushes pending movement and cancels old deadline");
+        near(rateSink.events.get(5).x,9);
+        rateTimer.expectedDelay=25; move(rates,rateSink,7,8);
+        for(int invalid:new int[]{0,39,41,44,46,59,61,120}) {
+            try { rates.setRateHz(invalid); throw new AssertionError("invalid rate accepted"); }
+            catch(IllegalArgumentException expected) {}
+        }
+        check(rates.getRateHz()==40 && rateTimer.task!=null,"invalid rate leaves active batch intact");
+        rateTimer.fire(); near(rateSink.events.get(6).x,7);
+
+        SuperInputStats.setBatchingEnabled(true); SuperInputStats.setBatchingRateHz(45); SuperInputStats.setEnabled(true);
         SuperInputStats.recordMouseInput(0,true); SuperInputStats.recordMouseInput(0,true);
         move(b,sink,1,1); move(b,sink,2,2); timer.fire();
-        SuperInputStats.setBatchingEnabled(false); SuperInputStats.setEnabled(false);
+        SuperInputStats.setBatchingRateHz(50); SuperInputStats.setBatchingEnabled(false); SuperInputStats.setEnabled(false);
         String report=SuperInputStats.report();
         check(report.contains("Incoming mouse movement calls: 2") && report.contains("Mouse movement calls: 1"),"incoming and forwarded counters");
         check(report.contains("at start: ON") && report.contains("changes during recording: 1"),"report records mode changes");
-        System.out.println("PASS: passthrough, summed deltas, bounded scheduling, button/wheel/absolute order, disable/tail flush, thread/sender/flag boundaries, scheduler fallback, long run and mode reports.");
+        check(report.contains("rate at start: 45 Hz") && report.contains("rate at report: 50 Hz (20 ms window); rate changes during recording: 1"),"report records rate and rate changes");
+        System.out.println("PASS: passthrough, summed deltas, bounded scheduling, button/wheel/absolute order, disable/tail flush, thread/sender/flag boundaries, scheduler fallback, long run, all five rates, rate-change flushing, invalid rates and mode/rate reports.");
     }
 }

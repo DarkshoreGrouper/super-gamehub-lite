@@ -24,6 +24,8 @@ import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.util.AttributeSet;
+import java.lang.reflect.Proxy;
 import org.json.JSONArray;
 import org.json.JSONException;
 import java.text.DateFormat;
@@ -144,11 +146,55 @@ public final class SuperDiagnostics {
         return t;
     }
 
+    /** Reuse the app's own sidebar rows, assets and focus behavior. Reflection is UI-only. */
+    private static View sidebarRow(Context c, String className) {
+        try {
+            return (View)Class.forName(className,true,c.getClassLoader())
+                .getConstructor(Context.class,AttributeSet.class).newInstance(c,null);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Native sidebar row unavailable: " + className,e);
+        }
+    }
+
+    private interface RateListener { void changed(int rate); }
+    private static View rateSlider(Context c, int rate, final RateListener listener) {
+        final View row = sidebarRow(c,"com.xj.winemu.view.SidebarProgressItemView");
+        try {
+            row.getClass().getMethod("setLeftTopText",String.class).invoke(row,"Mouse batching rate");
+            row.getClass().getMethod("setProcessTextSuffix",String.class).invoke(row," Hz");
+            View seekbar = named(row,"seekbar");
+            if (seekbar == null) throw new IllegalStateException("Native seekbar unavailable");
+            seekbar.getClass().getMethod("q",int.class,int.class,int.class,int.class).invoke(seekbar,40,60,rate,5);
+            row.getClass().getMethod("setProgress",int.class).invoke(row,rate);
+            Class<?> function = Class.forName("kotlin.jvm.functions.Function2",true,c.getClassLoader());
+            Object callback = Proxy.newProxyInstance(function.getClassLoader(),new Class<?>[]{function},(proxy,method,args) -> {
+                if (method.getName().equals("invoke")) {
+                    int value = ((Number)args[0]).intValue();
+                    if (Boolean.TRUE.equals(args[1]) && SuperMouseBatcher.isSupportedRateHz(value)) {
+                        row.setContentDescription("Mouse batching rate: " + value + " Hz");
+                        listener.changed(value);
+                    }
+                    // The native row ignores Function2's return and returns Kotlin Unit itself.
+                    return null;
+                }
+                if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
+                if (method.getName().equals("equals")) return proxy == args[0];
+                return "Super batching rate listener";
+            });
+            row.getClass().getMethod("setProgressListener",function).invoke(row,callback);
+            row.setContentDescription("Mouse batching rate: " + rate + " Hz");
+            return row;
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Could not configure native stepped slider",e);
+        }
+    }
+
     private static final class DiagnosticsPanel extends ScrollView implements Runnable {
         private final TextView counters;
         private final Switch toggle;
         private final Switch batchToggle;
-        private final Button reportsHeader;
+        private final View reportsHeader;
+        private final View reportsArrow;
         private final LinearLayout reports;
         private final TextView savedList;
         private final EditText label;
@@ -157,6 +203,8 @@ public final class SuperDiagnostics {
         DiagnosticsPanel(final Context c) {
             super(c);
             preferences = c.getApplicationContext().getSharedPreferences("super_diagnostics", Context.MODE_PRIVATE);
+            int storedRate = preferences.getInt("batching_rate_hz",SuperMouseBatcher.DEFAULT_RATE_HZ);
+            SuperMouseInput.setRateHz(SuperMouseBatcher.isSupportedRateHz(storedRate) ? storedRate : SuperMouseBatcher.DEFAULT_RATE_HZ);
             try { saved = new JSONArray(preferences.getString("reports", "[]")); }
             catch (JSONException e) { saved = new JSONArray(); }
             setBackgroundColor(0xff101b2e);
@@ -169,20 +217,33 @@ public final class SuperDiagnostics {
             title.setTextColor(CYAN); title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
             column.addView(title);
             batchToggle = new Switch(c);
-            batchToggle.setText("Experimental mouse batching (~60 Hz)");
+            batchToggle.setText("Experimental mouse batching");
             batchToggle.setTextColor(Color.WHITE);
             batchToggle.setChecked(SuperMouseInput.isEnabled());
             column.addView(batchToggle,new LinearLayout.LayoutParams(-1,dp(c,64)));
-            column.addView(text(c,"Combines relative mouse movement in 17 ms windows. May improve camera-swipe performance; compare ON and OFF. Absolute cursor movement is unchanged. Off by default for each game session.",12));
-            reportsHeader = new Button(c);
-            column.addView(reportsHeader,new LinearLayout.LayoutParams(-1,-2));
+            column.addView(rateSlider(c,SuperMouseInput.getRateHz(),rate -> {
+                SuperMouseInput.setRateHz(rate);
+                preferences.edit().putInt("batching_rate_hz",rate).apply();
+            }),new LinearLayout.LayoutParams(-1,-2));
+            column.addView(text(c,"40 / 45 / 50 / 55 / 60 Hz. Combines relative mouse movement; lower rates use longer windows. Compare ON and OFF. Off by default for each game session.",12));
+            reportsHeader = sidebarRow(c,"com.xj.winemu.view.SidebarClickItemView");
+            reportsArrow = named(reportsHeader,"iv_icon");
+            ((TextView)named(reportsHeader,"tv_name")).setText("Reports");
+            column.addView(reportsHeader,new LinearLayout.LayoutParams(-1,dp(c,56)));
             reports = new LinearLayout(c);
             reports.setOrientation(LinearLayout.VERTICAL);
+            int bodyBackground = c.getResources().getIdentifier("winemu_bg_mapping_rv","drawable",c.getPackageName());
+            if (bodyBackground != 0) reports.setBackgroundResource(bodyBackground);
+            reports.setPadding(dp(c,4),dp(c,4),dp(c,4),dp(c,4));
             reports.setVisibility(preferences.getBoolean("reports_expanded",false) ? View.VISIBLE : View.GONE);
-            column.addView(reports,new LinearLayout.LayoutParams(-1,-2));
+            if (reportsArrow != null) reportsArrow.setRotation(reports.getVisibility() == View.VISIBLE ? 270f : 90f);
+            LinearLayout.LayoutParams reportsLayout = new LinearLayout.LayoutParams(-1,-2);
+            reportsLayout.bottomMargin = dp(c,8);
+            column.addView(reports,reportsLayout);
             reportsHeader.setOnClickListener(v -> {
                 boolean expanded = reports.getVisibility() != View.VISIBLE;
                 reports.setVisibility(expanded ? View.VISIBLE : View.GONE);
+                if (reportsArrow != null) reportsArrow.animate().rotation(expanded ? 270f : 90f).setDuration(300).start();
                 preferences.edit().putBoolean("reports_expanded",expanded).apply();
                 refresh();
             });
@@ -267,8 +328,12 @@ public final class SuperDiagnostics {
         }
         void refresh() {
             if (batchToggle.isChecked() != SuperMouseInput.isEnabled()) batchToggle.setChecked(SuperMouseInput.isEnabled());
-            reportsHeader.setText((reports.getVisibility() == View.VISIBLE ? "▼" : "▶") + " Reports (" + saved.length() + " saved)"
-                + (SuperInputStats.enabled ? " · recording" : ""));
+            TextView reportDescription = (TextView)named(reportsHeader,"tv_desc");
+            reportDescription.setText(saved.length() + " saved" + (SuperInputStats.enabled ? " · recording" : ""));
+            reportDescription.setVisibility(View.VISIBLE);
+            reportsHeader.setContentDescription("Reports, " + saved.length() + " saved, "
+                + (reports.getVisibility() == View.VISIBLE ? "expanded" : "collapsed")
+                + (SuperInputStats.enabled ? ", recording" : ""));
             if (toggle.isChecked() != SuperInputStats.enabled) toggle.setChecked(SuperInputStats.enabled);
             counters.setText((SuperInputStats.enabled ? "RECORDING\n" : "STOPPED (last session)\n") + SuperInputStats.summary());
             StringBuilder list = new StringBuilder("Saved reports: " + saved.length());

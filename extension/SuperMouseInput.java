@@ -13,6 +13,11 @@ public final class SuperMouseInput {
     });
     private SuperMouseInput() {}
     public static boolean isEnabled() { return enabled; }
+    public static int getRateHz() { return BATCHER.getRateHz(); }
+    public static void setRateHz(int rate) {
+        BATCHER.setRateHz(rate);
+        SuperInputStats.setBatchingRateHz(rate);
+    }
     public static void setEnabled(boolean value) {
         BATCHER.setEnabled(value);
         enabled = value;
