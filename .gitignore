@@ -22,3 +22,7 @@ output/*.idsig
 patches/stats.txt
 
 *.jar
+# Permanent signing material is private and must never be committed.
+signing-private/
+
+__pycache__/

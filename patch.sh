@@ -26,9 +26,9 @@ APKTOOL_REQUIRED_VERSION="${APKTOOL_REQUIRED_VERSION:-2.12.1}"
 APKTOOL_JAR="${APKTOOL_JAR:-$SCRIPT_DIR/tools/apktool_${APKTOOL_REQUIRED_VERSION}.jar}"
 
 # Keystore configuration (can be overridden via environment variables)
-KEYSTORE="${KEYSTORE:-$SCRIPT_DIR/keystore/debug.keystore}"
-KEYSTORE_PASS="${KEYSTORE_PASS:-android}"
-KEY_ALIAS="${KEY_ALIAS:-androiddebugkey}"
+KEYSTORE="${KEYSTORE:-$SCRIPT_DIR/signing-private/super-gamehub-lite.p12}"
+KEYSTORE_PASS="${KEYSTORE_PASS:-}"
+KEY_ALIAS="${KEY_ALIAS:-supergamehub}"
 
 # Release mode: set RELEASE=true to build all package variants
 RELEASE="${RELEASE:-false}"
@@ -249,22 +249,21 @@ verify_source_apk() {
 }
 
 setup_keystore() {
-    print_step "Setting up signing keystore..."
-
-    if [ ! -f "$KEYSTORE" ]; then
-        mkdir -p "$(dirname "$KEYSTORE")"
-        keytool -genkey -v -keystore "$KEYSTORE" \
-            -alias "$KEY_ALIAS" \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass "$KEYSTORE_PASS" \
-            -keypass "$KEYSTORE_PASS" \
-            -dname "CN=GameHub Lite, OU=Community, O=GameHub Lite, L=Unknown, S=Unknown, C=XX"
-        print_success "Created debug keystore"
-    else
-        print_success "Using existing keystore"
+    print_step "Verifying permanent signing identity..."
+    if [ -z "${SUPER_VERSION_CODE:-}" ] || [ -z "${SUPER_VERSION_NAME:-}" ]; then
+        print_error "Set SUPER_VERSION_CODE and SUPER_VERSION_NAME for this update."
+        return 1
     fi
+    KEYSTORE="$KEYSTORE" KEYSTORE_PASS="$KEYSTORE_PASS" KEY_ALIAS="$KEY_ALIAS" \
+        bash "$SCRIPT_DIR/tools/check-signing-key.sh"
+    export KEYSTORE_PASS
+}
+
+apply_super_version() {
+    print_step "Setting Super Gamehub Lite update version..."
+    python3 "$SCRIPT_DIR/tools/set-apk-version.py" "$WORK_DIR/decompiled/apktool.yml"
+    VERSION="$SUPER_VERSION_NAME"
+    print_success "Super version $VERSION (Android code $SUPER_VERSION_CODE)"
 }
 
 decompile_apk() {
@@ -501,7 +500,7 @@ sign_apk() {
 
     if command -v apksigner &>/dev/null; then
         apksigner sign --ks "$KEYSTORE" \
-            --ks-pass "pass:$KEYSTORE_PASS" \
+            --ks-pass "env:KEYSTORE_PASS" \
             --ks-key-alias "$KEY_ALIAS" \
             --out "$target_apk" \
             "$WORK_DIR/unsigned.apk"
@@ -509,23 +508,23 @@ sign_apk() {
         local apksigner_cmd=$(find "$ANDROID_HOME/build-tools" -name "apksigner" | head -1)
         if [ -n "$apksigner_cmd" ]; then
             "$apksigner_cmd" sign --ks "$KEYSTORE" \
-                --ks-pass "pass:$KEYSTORE_PASS" \
+                --ks-pass "env:KEYSTORE_PASS" \
                 --ks-key-alias "$KEY_ALIAS" \
                 --out "$target_apk" \
                 "$WORK_DIR/unsigned.apk"
         else
             jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
                 -keystore "$KEYSTORE" \
-                -storepass "$KEYSTORE_PASS" \
-                -keypass "$KEYSTORE_PASS" \
+                -storepass:env KEYSTORE_PASS \
+                -keypass:env KEYSTORE_PASS \
                 -signedjar "$target_apk" \
                 "$WORK_DIR/unsigned.apk" "$KEY_ALIAS"
         fi
     else
         jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
             -keystore "$KEYSTORE" \
-            -storepass "$KEYSTORE_PASS" \
-            -keypass "$KEYSTORE_PASS" \
+            -storepass:env KEYSTORE_PASS \
+            -keypass:env KEYSTORE_PASS \
             -signedjar "$target_apk" \
             "$WORK_DIR/unsigned.apk" "$KEY_ALIAS" 2>&1 | tail -3
     fi
@@ -625,6 +624,7 @@ main() {
     apply_patches
     apply_binary_replacements
     apply_additions
+    apply_super_version
 
     if [ "$RELEASE" = "true" ]; then
         # Backup manifest for variant builds
