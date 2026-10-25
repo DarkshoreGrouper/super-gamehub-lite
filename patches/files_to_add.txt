@@ -2882,3 +2882,8 @@ smali_classes4/com/xj/winemu/sidebar/RtsSwitchClickListener.smali
 smali_classes4/com/xj/winemu/view/RtsTouchOverlayView.smali
 smali_classes4/com/xj/winemu/view/RtsTouchOverlayView$RightClickReleaseRunnable.smali
 smali_classes5/com/xj/pcvirtualbtn/inputcontrols/RangeScrollerRtsTask.smali
+res/mipmap-mdpi/ic_launcher_mono.png
+res/mipmap-hdpi/ic_launcher_mono.png
+res/mipmap-xhdpi/ic_launcher_mono.png
+res/mipmap-xxhdpi/ic_launcher_mono.png
+res/mipmap-xxxhdpi/ic_launcher_mono.png

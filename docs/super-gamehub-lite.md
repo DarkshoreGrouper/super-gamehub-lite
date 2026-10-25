@@ -69,3 +69,13 @@ by workflow run results; preparation alone does not establish a verified build.
   telemetry-report information banner. The news heading and cards are not
   supplied to the list adapter. No server-side API changes are needed.
 - This title belongs to the launcher; it is not an overlay over a running game.
+
+## Launcher icon
+
+The approved red SUPER/controller artwork is stored in
+`assets/branding/super-gamehub-lite.webp`. Run
+`tools/create-launcher-icons.sh` with ImageMagick installed to regenerate
+legacy, adaptive background/foreground, and Android themed icon assets for
+all five density buckets. Adaptive artwork is centered inside the safe area
+so launcher masks preserve the lettering. The monochrome variant includes
+both SUPER and the controller; it does not retain the old Lite silhouette.
