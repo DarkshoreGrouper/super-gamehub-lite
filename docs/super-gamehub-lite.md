@@ -33,12 +33,12 @@ and launch action are namespaced separately from `gamehub.lite` for parallel
 installation. No literal `gamehub.lite` references exist in the extension or
 other upstream patch files. Runtime behavior still requires device testing.
 Android app data is separate; game containers/settings are not migrated.
-Upstream generates an ephemeral signing key on a clean runner. Establish
-persistent signing before ongoing updates. Preserve the working installation.
+This fork now requires its permanent signing key and pinned certificate.
+See signing-and-updates.md for the one-time migration and future updates.
 
 ## Following milestones
 
-- Establish persistent APK signing (separate app identity is implemented).
+- Permanent APK signing and separate app identity are implemented.
 - Build and smoke-test the separately installable unoptimized APK on Fold 7.
 - Locate the swipe-camera path and measure incoming and outgoing mouse-event
   rates. Candidate entry: the patched GTouchUtils class; this is a starting

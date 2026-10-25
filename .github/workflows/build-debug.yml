@@ -8,6 +8,9 @@ on:
       - 'patches/**'
       - 'extension/**'
       - 'tests/**'
+      - 'signing/**'
+      - 'tools/check-signing-key.sh'
+      - 'tools/set-apk-version.py'
       - 'patch.sh'
       - 'generate-patches.sh'
       - '.github/workflows/build-debug.yml'
@@ -16,6 +19,9 @@ on:
       - 'patches/**'
       - 'extension/**'
       - 'tests/**'
+      - 'signing/**'
+      - 'tools/check-signing-key.sh'
+      - 'tools/set-apk-version.py'
       - 'patch.sh'
       - 'generate-patches.sh'
       - '.github/workflows/build-debug.yml'
@@ -34,6 +40,8 @@ env:
 
 jobs:
   build:
+    # Untrusted pull requests must never receive the permanent app-signing key.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
@@ -51,6 +59,9 @@ jobs:
           mkdir -p stats-tests
           javac -source 8 -target 8 -d stats-tests extension/SuperInputStats.java tests/SuperInputStatsTest.java
           java -cp stats-tests SuperInputStatsTest
+
+      - name: Test APK version metadata
+        run: python3 -m unittest discover -s tests -p 'test_apk_version.py'
 
       - name: Install apktool
         run: |
@@ -102,8 +113,56 @@ jobs:
           ls -la ext_dex/classes.dex
           echo "EXTENSION_DEX_PATH=$GITHUB_WORKSPACE/ext_dex/classes.dex" >> "$GITHUB_ENV"
 
-      - name: Build debug APK
+      - name: Restore permanent signing key
+        env:
+          SIGNING_KEY_B64: ${{ secrets.SUPER_SIGNING_KEYSTORE_B64 }}
+          KEYSTORE_PASS: ${{ secrets.SUPER_SIGNING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          if [[ -z "$SIGNING_KEY_B64" || -z "$KEYSTORE_PASS" ]]; then
+            echo '::error::Permanent signing secrets are missing. Restore the original key; a new random key will not be generated.'
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/super-signing"
+          printf '%s' "$SIGNING_KEY_B64" | base64 --decode > "$RUNNER_TEMP/super-signing/app.p12"
+          export KEYSTORE="$RUNNER_TEMP/super-signing/app.p12"
+          export KEY_ALIAS=supergamehub
+          bash tools/check-signing-key.sh
+          echo "KEYSTORE=$KEYSTORE" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "SUPER_VERSION_CODE=$((100000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+          echo "SUPER_VERSION_NAME=0.1.$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+
+      - name: Build signed APK
+        env:
+          KEYSTORE_PASS: ${{ secrets.SUPER_SIGNING_PASSWORD }}
         run: ./patch.sh
+
+      - name: Verify APK signing identity and update version
+        run: |
+          set -euo pipefail
+          BUILD_TOOLS="$ANDROID_SDK_ROOT/build-tools/34.0.0"
+          "$BUILD_TOOLS/apksigner" verify --print-certs output/GameHub-Lite.apk > output/SIGNING.txt
+          python3 - <<'PYVERIFY'
+          from pathlib import Path
+          import os, re, subprocess
+          expected = Path('signing/certificate-sha256.txt').read_text().strip()
+          certs = Path('output/SIGNING.txt').read_text()
+          actual = re.findall(r'Signer #\d+ certificate SHA-256 digest: ([0-9a-fA-F]+)', certs)
+          if actual != [expected]:
+              raise SystemExit('APK signing certificate mismatch')
+          aapt = os.environ['ANDROID_SDK_ROOT'] + '/build-tools/34.0.0/aapt'
+          info = subprocess.check_output([aapt, 'dump', 'badging', 'output/GameHub-Lite.apk'], text=True)
+          package = re.search(r"^package: name='([^']+)' versionCode='([^']+)' versionName='([^']+)'", info)
+          if not package or package.groups() != ('super.gamehub.lite', os.environ['SUPER_VERSION_CODE'], os.environ['SUPER_VERSION_NAME']):
+              raise SystemExit('APK package or update version mismatch')
+          print('APK signature, package and Android update version verified')
+          PYVERIFY
+
+      - name: Remove restored private key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/super-signing/app.p12"
 
       - name: Record baseline provenance
         run: |
@@ -118,7 +177,9 @@ jobs:
             echo "Source MD5: $SOURCE_APK_MD5"
             echo "Apktool: $APKTOOL_VERSION"
             echo "Package: super.gamehub.lite (separate application identity)"
-            echo "Signing: per-build debug key; not an update to the official APK"
+            echo "Signing: permanent Super Gamehub Lite certificate"
+            echo "Version: $SUPER_VERSION_NAME ($SUPER_VERSION_CODE)"
+            cat output/SIGNING.txt
           } > output/BASELINE.txt
 
       - name: Upload baseline APK
@@ -129,6 +190,7 @@ jobs:
             output/Super-Gamehub-Lite-baseline.apk
             output/SHA256SUMS
             output/BASELINE.txt
+            output/SIGNING.txt
           if-no-files-found: error
           retention-days: 30
 

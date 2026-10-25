@@ -10,9 +10,10 @@ The baseline uses `super.gamehub.lite` and the label **Super Gamehub Lite**,
 so it can be installed alongside normal GameHub Lite (`gamehub.lite`). Provider
 authorities, signature permissions and the launch action use the new namespace.
 Each app has separate Android app data; containers and settings do not migrate
-automatically. The CI build currently generates a fresh debug signing key, so
-successive CI APKs are not guaranteed to install as updates to one another.
-Persistent signing is required before ongoing releases.
+automatically. Builds now require the permanent signing key and use increasing
+Android version codes. After migrating from the original temporary-key build
+once, future signed builds can update Super in place. See
+[permanent signing and recovery](docs/signing-and-updates.md).
 
 The **SUPER** in-game sidebar tab contains opt-in input diagnostics. See
 [how to measure and copy a report](docs/input-diagnostics.md).
@@ -110,8 +111,9 @@ adb install output/GameHub-Lite.apk
 
 #### How to use your custom keystore
 
-By default the patch generates a debug keystore for you,
-but you can override the keystore settings using environment variables:
+This fork requires its original permanent signing keystore. It never generates
+a replacement automatically. Set these variables along with SUPER_VERSION_CODE
+and SUPER_VERSION_NAME (see docs/signing-and-updates.md):
 
 ```bash
 KEYSTORE="./keystore/release.keystore" \
