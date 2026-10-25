@@ -6,10 +6,20 @@ Controls, Performance and Settings. The keyboard shortcut remains separate.
 1. Enable **Record + show overlay** (off by default for every process).
 2. Press **Reset measurements**, then close the sidebar.
 3. Stay in one WoW location. Record standing still, running straight and camera
-   swipes as separate sessions, resetting before each comparison.
-4. Reopen SUPER and disable recording to freeze that session.
-5. Select **Copy report** and paste it into the conversation. Include observed
-   FPS from the existing performance display; diagnostics does not measure FPS.
+   swipes as separate sessions.
+4. Reopen SUPER, optionally enter a test label and observed FPS, then select
+   **Stop + save report**. This freezes the current session and saves a snapshot
+   with its label, timestamp, device and app version.
+5. Enable recording again to start a fresh session and repeat for each test.
+6. Select **Copy all saved reports** and paste them into the conversation.
+   **Copy report** still copies just the current session. FPS must be entered
+   manually from the existing performance display; diagnostics does not measure it.
+
+Saved snapshots are stored locally in app-private preferences and survive game
+restarts and app updates. Resetting measurements or starting another session
+does not change them. The page lists saved test labels and times. **Clear saved
+reports** removes the collection after confirmation and leaves the current
+session intact. Uninstalling the app or clearing app data removes saved reports.
 
 The small non-interactive overlay stays visible while the sidebar is closed.
 It refreshes once per second. Reset clears counters and average/maximum timing.

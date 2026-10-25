@@ -1,10 +1,12 @@
 package com.xj.winemu.sidebar;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -15,12 +17,17 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+import org.json.JSONArray;
+import org.json.JSONException;
+import java.text.DateFormat;
+import java.util.Date;
 
 /** Programmatic fourth sidebar page; compiled with the existing Java extension. */
 public final class SuperDiagnostics {
@@ -133,8 +140,15 @@ public final class SuperDiagnostics {
     private static final class DiagnosticsPanel extends ScrollView implements Runnable {
         private final TextView counters;
         private final Switch toggle;
+        private final TextView savedList;
+        private final EditText label;
+        private final SharedPreferences preferences;
+        private JSONArray saved;
         DiagnosticsPanel(final Context c) {
             super(c);
+            preferences = c.getApplicationContext().getSharedPreferences("super_diagnostics", Context.MODE_PRIVATE);
+            try { saved = new JSONArray(preferences.getString("reports", "[]")); }
+            catch (JSONException e) { saved = new JSONArray(); }
             setBackgroundColor(0xff101b2e);
             setFillViewport(true);
             LinearLayout column = new LinearLayout(c);
@@ -156,34 +170,101 @@ public final class SuperDiagnostics {
             column.addView(reset,new LinearLayout.LayoutParams(-1,-2));
             Button copy = new Button(c); copy.setText("Copy report");
             column.addView(copy,new LinearLayout.LayoutParams(-1,-2));
-            column.addView(text(c,"Enable, close the sidebar, then compare standing still, running straight and camera swipes. Reset before each test.\n\nCounts include all touch movement, including controls and menu gestures. Send time measures the native call, not total Wine or game latency. Input is unchanged.",12));
+            label = new EditText(c);
+            label.setTextColor(Color.WHITE);
+            label.setHintTextColor(0xffb7c5d8);
+            label.setHint("Test label / observed FPS (optional)");
+            label.setMaxLines(3);
+            column.addView(label,new LinearLayout.LayoutParams(-1,-2));
+            Button save = new Button(c); save.setText("Stop + save report");
+            column.addView(save,new LinearLayout.LayoutParams(-1,-2));
+            savedList = text(c,"",12);
+            column.addView(savedList);
+            Button copyAll = new Button(c); copyAll.setText("Copy all saved reports");
+            column.addView(copyAll,new LinearLayout.LayoutParams(-1,-2));
+            Button clear = new Button(c); clear.setText("Clear saved reports");
+            column.addView(clear,new LinearLayout.LayoutParams(-1,-2));
+            column.addView(text(c,"Record a test, add an optional label/FPS, then Stop + save report. Enable recording again for a fresh test. Copy all saved reports when finished. Saved reports survive closing the game and app updates; Reset measurements only resets the current session.\n\nCounts include all touch movement, including controls and menu gestures. Send time measures the native call, not total Wine or game latency. Input is unchanged.",12));
             toggle.setOnCheckedChangeListener((button,checked) -> {
                 SuperInputStats.setEnabled(checked);
                 updateOverlay(c);
                 refresh();
             });
             reset.setOnClickListener(v -> { SuperInputStats.reset(); refresh(); });
-            copy.setOnClickListener(v -> {
-                String version = "unknown";
-                try { version = c.getPackageManager().getPackageInfo(c.getPackageName(),0).versionName; }
-                catch (android.content.pm.PackageManager.NameNotFoundException ignored) {}
-                String report = SuperInputStats.report() + "\nDevice: " + Build.MANUFACTURER + " " + Build.MODEL
-                    + "\nAndroid: " + Build.VERSION.RELEASE + "\nApp: " + c.getPackageName() + " " + version;
-                ClipboardManager clipboard = (ClipboardManager)c.getSystemService(Context.CLIPBOARD_SERVICE);
-                if (clipboard != null) {
-                    clipboard.setPrimaryClip(ClipData.newPlainText("Super Gamehub Lite diagnostics",report));
-                    Toast.makeText(c,"Diagnostics report copied",Toast.LENGTH_SHORT).show();
-                }
+            copy.setOnClickListener(v -> copyReport(c,currentReport(c)));
+            save.setOnClickListener(v -> {
+                SuperInputStats.setEnabled(false);
+                updateOverlay(c);
+                String name = label.getText().toString().trim();
+                if (name.isEmpty()) name = "Test " + (saved.length() + 1);
+                String report = "Test: " + name + "\nSaved: " + DateFormat.getDateTimeInstance().format(new Date())
+                    + "\n\n" + currentReport(c);
+                // Save a new array first so a failed write does not alter the displayed collection.
+                try {
+                    JSONArray next = new JSONArray(saved.toString());
+                    next.put(report);
+                    if (preferences.edit().putString("reports",next.toString()).commit()) {
+                        saved = next;
+                        label.setText("");
+                        Toast.makeText(c,"Report saved",Toast.LENGTH_SHORT).show();
+                    } else Toast.makeText(c,"Could not save report; current report is still available",Toast.LENGTH_LONG).show();
+                } catch (JSONException e) { Log.e("SuperDiagnostics","Could not save report",e); }
+                refresh();
             });
+            copyAll.setOnClickListener(v -> {
+                if (saved.length() == 0) {
+                    Toast.makeText(c,"No saved reports yet",Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                StringBuilder reports = new StringBuilder("Super Gamehub Lite - Saved diagnostics reports (" + saved.length() + ")\n");
+                for (int i=0; i<saved.length(); i++)
+                    reports.append("\n========== Report ").append(i+1).append(" ==========\n").append(saved.optString(i)).append("\n");
+                copyReport(c,reports.toString());
+            });
+            clear.setOnClickListener(v -> new AlertDialog.Builder(c)
+                .setTitle("Clear saved reports?")
+                .setMessage("This deletes the saved reports on this device. The current session is kept.")
+                .setNegativeButton("Cancel",null)
+                .setPositiveButton("Clear",(dialog,which) -> {
+                    if (preferences.edit().remove("reports").commit()) { saved = new JSONArray(); refresh(); }
+                    else Toast.makeText(c,"Could not clear reports",Toast.LENGTH_SHORT).show();
+                }).show());
             refresh();
         }
         void refresh() {
             if (toggle.isChecked() != SuperInputStats.enabled) toggle.setChecked(SuperInputStats.enabled);
             counters.setText((SuperInputStats.enabled ? "RECORDING\n" : "STOPPED (last session)\n") + SuperInputStats.summary());
+            StringBuilder list = new StringBuilder("Saved reports: " + saved.length());
+            for (int i=0; i<saved.length(); i++) {
+                String report = saved.optString(i);
+                int end = report.indexOf("\n\n");
+                list.append("\n\n").append(i+1).append(". ").append(end < 0 ? report : report.substring(0,end));
+            }
+            savedList.setText(list.toString());
         }
         public void run() { if (isShown()) refresh(); postDelayed(this,1000); }
         protected void onAttachedToWindow() { super.onAttachedToWindow(); removeCallbacks(this); post(this); }
         protected void onDetachedFromWindow() { removeCallbacks(this); super.onDetachedFromWindow(); }
+    }
+
+    private static String currentReport(Context c) {
+        String version = "unknown";
+        try { version = c.getPackageManager().getPackageInfo(c.getPackageName(),0).versionName; }
+        catch (android.content.pm.PackageManager.NameNotFoundException ignored) {}
+        return SuperInputStats.report() + "\nDevice: " + Build.MANUFACTURER + " " + Build.MODEL
+            + "\nAndroid: " + Build.VERSION.RELEASE + "\nApp: " + c.getPackageName() + " " + version;
+    }
+
+    private static void copyReport(Context c, String report) {
+        ClipboardManager clipboard = (ClipboardManager)c.getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard != null) {
+            try {
+                clipboard.setPrimaryClip(ClipData.newPlainText("Super Gamehub Lite diagnostics",report));
+                Toast.makeText(c,"Diagnostics copied",Toast.LENGTH_SHORT).show();
+            } catch (RuntimeException e) {
+                Toast.makeText(c,"Could not copy reports; saved reports are kept",Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     private static void updateOverlay(Context c) {
