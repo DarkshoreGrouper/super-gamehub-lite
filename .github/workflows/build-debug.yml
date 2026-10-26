@@ -57,17 +57,14 @@ jobs:
       - name: Test input diagnostics and mouse batching
         run: |
           mkdir -p stats-tests
-          javac -source 8 -target 8 -d stats-tests extension/SuperInputStats.java extension/SuperMouseBatcher.java extension/SuperCameraMotion.java extension/SuperFrameGenControl.java extension/SuperX11Protocol.java extension/SuperCaptureSignals.java tests/SuperInputStatsTest.java tests/SuperMouseBatcherTest.java tests/SuperCameraMotionTest.java tests/SuperFrameGenControlTest.java tests/SuperCaptureProbeTest.java
+          javac -source 8 -target 8 -d stats-tests extension/SuperInputStats.java extension/SuperMouseBatcher.java extension/SuperCameraMotion.java extension/SuperFrameGenControl.java tests/SuperInputStatsTest.java tests/SuperMouseBatcherTest.java tests/SuperCameraMotionTest.java tests/SuperFrameGenControlTest.java
           java -cp stats-tests SuperInputStatsTest
           java -cp stats-tests SuperMouseBatcherTest
           java -cp stats-tests SuperCameraMotionTest
-          java -cp stats-tests SuperCaptureProbeTest
           java -cp stats-tests SuperFrameGenControlTest
 
       - name: Test APK version metadata
-        run: |
-          python3 -m unittest discover -s tests -p 'test_apk_version.py'
-          python3 -m unittest discover -s tests -p 'test_capture_transport.py'
+        run: python3 -m unittest discover -s tests -p 'test_apk_version.py'
 
       - name: Install apktool
         run: |

@@ -42,7 +42,6 @@ public final class SuperDiagnostics {
     public static void configureHud(Context c) {
         hudEnabled=c.getSharedPreferences("super_diagnostics",Context.MODE_PRIVATE).getBoolean("diagnostics_hud",false);
         SuperInputStats.setLiveEnabled(hudEnabled);
-        SuperCaptureProbe.setEnabled(c,c.getSharedPreferences("super_diagnostics",Context.MODE_PRIVATE).getBoolean("native_camera_probe",false));
     }
 
     private static int dp(Context c, int value) {
@@ -144,7 +143,6 @@ public final class SuperDiagnostics {
     }
 
     public static void stop() {
-        SuperCaptureProbe.stop();
         SuperCameraFrameGen.stopGame();
         SuperMouseInput.setEnabled(false);
         SuperInputStats.setEnabled(false);
@@ -247,15 +245,6 @@ public final class SuperDiagnostics {
                 hudEnabled=checked; SuperInputStats.setLiveEnabled(checked);
                 preferences.edit().putBoolean("diagnostics_hud",checked).apply(); updateOverlay(c);
             });
-            Switch captureProbe=new Switch(c);
-            captureProbe.setText("Native camera-state probe (experimental)");
-            captureProbe.setTextColor(Color.WHITE); captureProbe.setChecked(SuperCaptureProbe.isEnabled());
-            column.addView(captureProbe,new LinearLayout.LayoutParams(-1,dp(c,64)));
-            captureProbe.setOnCheckedChangeListener((button,checked) -> {
-                preferences.edit().putBoolean("native_camera_probe",checked).apply();
-                SuperCaptureProbe.setEnabled(c,checked);
-            });
-            column.addView(text(c,"Enable Diagnostics HUD to compare X11 grab, release, recenter and cursor-image signals. Observe camera mode, then right-click for cursor mode, then walk to resume camera. Probe does not change batching or frame generation. Counts start when enabled; enable before switching modes. Adds diagnostic overhead; turn off afterward.",12));
             batchToggle = new Switch(c);
             batchToggle.setText("Experimental mouse batching");
             batchToggle.setTextColor(Color.WHITE);
@@ -452,7 +441,7 @@ public final class SuperDiagnostics {
         String version = "unknown";
         try { version = c.getPackageManager().getPackageInfo(c.getPackageName(),0).versionName; }
         catch (android.content.pm.PackageManager.NameNotFoundException ignored) {}
-        return SuperInputStats.report() + "\n"+SuperMouseInput.liveSummary()+"\n" + SuperCameraFrameGen.summary(c)+"\n"+SuperCaptureProbe.summary() + "\nDevice: " + Build.MANUFACTURER + " " + Build.MODEL
+        return SuperInputStats.report() + "\n"+SuperMouseInput.liveSummary()+"\n" + SuperCameraFrameGen.summary(c) + "\nDevice: " + Build.MANUFACTURER + " " + Build.MODEL
             + "\nAndroid: " + Build.VERSION.RELEASE + "\nApp: " + c.getPackageName() + " " + version;
     }
 
@@ -497,7 +486,7 @@ public final class SuperDiagnostics {
         public void run() {
             if (!SuperInputStats.enabled && !hudEnabled) { setVisibility(View.GONE); return; }
             setVisibility(View.VISIBLE);
-            setText("SUPER INPUT\n" + (hudEnabled ? SuperMouseInput.liveSummary()+"\n"+SuperCameraFrameGen.hudSummary()+(SuperCaptureProbe.isEnabled()?"\n"+SuperCaptureProbe.hudSummary():"") : SuperInputStats.summary()));
+            setText("SUPER INPUT\n" + (hudEnabled ? SuperMouseInput.liveSummary()+"\n"+SuperCameraFrameGen.hudSummary() : SuperInputStats.summary()));
             postDelayed(this,hudEnabled ? 200 : 1000);
         }
         protected void onDetachedFromWindow() { removeCallbacks(this); super.onDetachedFromWindow(); }

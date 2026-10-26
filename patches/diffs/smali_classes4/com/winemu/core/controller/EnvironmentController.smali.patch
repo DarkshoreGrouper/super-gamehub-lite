@@ -1,5 +1,0 @@
---- a/smali_classes4/com/winemu/core/controller/EnvironmentController.smali
-+++ b/smali_classes4/com/winemu/core/controller/EnvironmentController.smali
-@@ -416,0 +417,2 @@
-+    invoke-static {v1}, Lcom/xj/winemu/sidebar/SuperCaptureProbe;->runtimeTmp(Ljava/lang/String;)V
-+

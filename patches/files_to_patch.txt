@@ -242,4 +242,3 @@ smali_classes4/com/winemu/core/controller/X11Controller$setupInputManager$1.smal
 smali_classes4/com/winemu/core/server/XServer.smali
 smali_classes4/com/winemu/ui/X11View.smali
 smali_classes4/com/winemu/ui/WinEmuInputConnection.smali
-smali_classes4/com/winemu/core/controller/EnvironmentController.smali
