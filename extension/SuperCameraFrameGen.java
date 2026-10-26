@@ -98,6 +98,7 @@ public final class SuperCameraFrameGen {
         if (enabled) requestApply();
     }
     public static void mouse(float x,float y,int kind,boolean down,boolean relative) {
+        MOTION.observeMouse(kind,down,relative);
         // Track button state even with FG off: latched LOOK may already be held when enabled.
         if (!enabled) {
             if (kind>=1 && kind<=3) MOTION.mouse(x,y,kind,down,relative,SystemClock.uptimeMillis());
@@ -158,11 +159,22 @@ public final class SuperCameraFrameGen {
             + "\nCamera FG trigger: " + selectedTrigger(c).name() + "\nLearned trigger: " + keyLabel(c)
             + "\nGate additionally requires nonzero relative movement; 100 ms idle cutoff"
             + "\nGate activations this game: " + activations + "\n" + MOTION.debugSummary()
+            + "\n"+MOTION.observationSummary()+"\nFG status: "+runtimeReason()
             + "\n" + BhFrameGenWriter.controlReport()
             + "\nCamera FG uses input inference, not game camera-angle telemetry.\n";
     }
     public static String hudSummary() {
         return "FG mode:"+(enabled?"ON":"OFF")+" activations:"+activations+"\n"+MOTION.debugSummary()
+            + "\n"+MOTION.observationSummary()+"\nFG status: "+runtimeReason()
             + "\nFG last control: "+BhFrameGenWriter.controlStatus()+"\n"+BhFrameGenWriter.controlCounts();
+    }
+    private static String runtimeReason() {
+        Context c=context;
+        if (c==null) return "not initialized";
+        if (!supported(c)) return "unavailable: requires GameScopeVK";
+        if (!enabled) return "feature switched OFF";
+        if (learning) return "learning key; gate paused";
+        synchronized (LOCK) { if (!armed) return "game stopped"; }
+        return MOTION.gateReason();
     }
 }

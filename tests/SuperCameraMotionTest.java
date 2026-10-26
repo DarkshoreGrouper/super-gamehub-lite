@@ -4,6 +4,12 @@ public final class SuperCameraMotionTest {
     private static void check(boolean value,String message) { if (!value) throw new AssertionError(message); }
     public static void main(String[] args) {
         SuperCameraMotion gate = new SuperCameraMotion();
+        gate.observeMouse(0,false,true); gate.observeMouse(0,false,false);
+        gate.observeMouse(3,true,true); gate.observeMouse(3,false,true);
+        check(gate.observationSummary().contains("moves:2 rel:1 abs:1"),"raw counters observe input independently of activation");
+        check(gate.observationSummary().contains("Buttons:2 last:R UP"),"raw right-button transitions stay visible");
+        check(gate.gateReason().equals("waiting for trigger"),"explain missing trigger");
+        gate.reset(); check(gate.observationSummary().contains("moves:0"),"new game resets raw counters");
         gate.mouse(5,6,0,false,false,0); check(!gate.isActive(),"absolute cursor stays off");
         gate.mouse(5,6,0,false,true,1); check(!gate.isActive(),"relative cursor without camera button stays off");
         gate.mouse(0,0,1,true,true,2); gate.mouse(5,6,0,false,true,3);
