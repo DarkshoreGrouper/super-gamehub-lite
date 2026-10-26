@@ -1,0 +1,5 @@
+--- a/res/layout/activity_splash.xml
++++ b/res/layout/activity_splash.xml
+@@ -4,1 +4,1 @@
+-    <com.hjq.shape.view.ShapeImageView android:id="@id/iv_gif" android:layout_width="@dimen/dp_266" android:layout_height="@dimen/dp_150" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
++    <com.hjq.shape.view.ShapeImageView android:id="@id/iv_gif" android:layout_width="532dp" android:layout_height="300dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
