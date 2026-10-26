@@ -1,12 +1,15 @@
 --- a/smali_classes4/com/winemu/core/controller/X11Controller.smali
 +++ b/smali_classes4/com/winemu/core/controller/X11Controller.smali
-@@ -606 +606 @@
+@@ -406,0 +407,2 @@
++    invoke-static {p2}, Lcom/xj/winemu/sidebar/SuperCaptureProbe;->runtimeRoot(Ljava/lang/String;)V
++
+@@ -606 +608 @@
 -    invoke-virtual {v0, p1, p2, p3}, Lcom/winemu/core/server/XServer;->sendKeyEvent(IIZ)Z
 +    invoke-virtual {v0, p1, p2, p3}, Lcom/winemu/core/server/XServer;->sendKeyEventObserved(IIZ)Z
-@@ -626 +626 @@
+@@ -626 +628 @@
 -    invoke-virtual/range {v0 .. v5}, Lcom/winemu/core/server/XServer;->sendMouseEvent(FFIZZ)V
 +    invoke-virtual/range {v0 .. v5}, Lcom/winemu/core/server/XServer;->sendMouseEventMeasured(FFIZZ)V
-@@ -750,0 +751,13 @@
+@@ -750,0 +753,13 @@
 +
 +.method public final setTrackpadInputMode(I)V
 +    .locals 1
