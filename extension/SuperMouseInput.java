@@ -16,8 +16,11 @@ public final class SuperMouseInput {
     public static String liveSummary() {
         boolean actual=BATCHER.isEnabled();
         return "BATCH "+(enabled?"ON":"OFF")+" @"+BATCHER.getRateHz()+" Hz"
+            +(BATCHER.isFixedPacing()?" fixed pacing":" batch windows")
             +(actual!=enabled?" STATE MISMATCH":"")+"\n"+(SuperInputStats.liveEnabled ? SuperInputStats.liveSummary() : "Live HUD counters off");
     }
+    public static boolean isFixedPacing() { return BATCHER.isFixedPacing(); }
+    public static void setFixedPacing(boolean value) { BATCHER.setFixedPacing(value); }
     public static int getRateHz() { return BATCHER.getRateHz(); }
     public static void setRateHz(int rate) {
         BATCHER.setRateHz(rate);

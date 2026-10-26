@@ -138,7 +138,7 @@ public final class SuperInputStats {
             "Batching at report: %s; changes during recording: %d\n" +
             "Selected batching rate at start: %d Hz\n" +
             "Selected rate at report: %d Hz (%d ms window); rate changes during recording: %d\n" +
-            "Selected Hz sets a batching window, not an exact steady output rate; boundary flushes bypass the window\n" +
+            "Selected Hz is a timing target; see delivery mode below. Boundary flushes bypass pacing; Android scheduling may delay sends\n" +
             "State: %s\nSession duration: %.2f s\n" +
             "Touch move dispatches: %d\nTouch samples (history x pointers): %d\n" +
             "Incoming mouse movement calls: %d\nIncoming relative movement calls: %d\n" +

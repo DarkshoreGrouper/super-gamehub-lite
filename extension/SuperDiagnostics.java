@@ -127,7 +127,9 @@ public final class SuperDiagnostics {
         }
     }
 
-    /** Called by native sidebar selection without replacing its click listeners. */
+    /** Called only when the native sidebar navigates to another page.
+     * Focus changes inside native radio lists must never hide the SUPER page.
+     */
     public static void hideDrawer(View root) {
         View panel = root.findViewWithTag(PANEL);
         if (panel == null || panel.getVisibility() != View.VISIBLE) return;
@@ -224,6 +226,7 @@ public final class SuperDiagnostics {
             configureHud(c);
             int storedRate = preferences.getInt("batching_rate_hz",SuperMouseBatcher.DEFAULT_RATE_HZ);
             SuperMouseInput.setRateHz(SuperMouseBatcher.isSupportedRateHz(storedRate) ? storedRate : SuperMouseBatcher.DEFAULT_RATE_HZ);
+            SuperMouseInput.setFixedPacing(preferences.getBoolean("batching_fixed_pacing",false));
             try { saved = new JSONArray(preferences.getString("reports", "[]")); }
             catch (JSONException e) { saved = new JSONArray(); }
             setBackgroundColor(0xff101b2e);
@@ -247,13 +250,20 @@ public final class SuperDiagnostics {
             batchToggle.setTextColor(Color.WHITE);
             batchToggle.setChecked(SuperMouseInput.isEnabled());
             column.addView(batchToggle,new LinearLayout.LayoutParams(-1,dp(c,64)));
-            final int[] rates = {40,45,50,55,60};
-            column.addView(choiceList(c,"Batching rate",new String[]{"40 Hz","45 Hz","50 Hz","55 Hz","60 Hz"},
-                (SuperMouseInput.getRateHz()-40)/5,index -> {
+            final int[] rates = {40,45,50,55,60,75,90,100};
+            int selectedRate = 4;
+            for (int i=0;i<rates.length;i++) if (rates[i]==SuperMouseInput.getRateHz()) selectedRate=i;
+            column.addView(choiceList(c,"Batching rate",new String[]{"40 Hz","45 Hz","50 Hz","55 Hz","60 Hz","75 Hz","90 Hz","100 Hz"},
+                selectedRate,index -> {
                     SuperMouseInput.setRateHz(rates[index]);
                     preferences.edit().putInt("batching_rate_hz",rates[index]).apply();
                 }),new LinearLayout.LayoutParams(-1,-2));
-            column.addView(text(c,"Batching starts enabled by default. Your toggle and rate choices are remembered.",12));
+            column.addView(choiceList(c,"Mouse delivery timing",new String[]{"Batch windows (original)","Fixed pacing (experimental)"},
+                SuperMouseInput.isFixedPacing()?1:0,index -> {
+                    SuperMouseInput.setFixedPacing(index==1);
+                    preferences.edit().putBoolean("batching_fixed_pacing",index==1).apply();
+                }),new LinearLayout.LayoutParams(-1,-2));
+            column.addView(text(c,"Batching starts enabled by default. Toggle, rate and timing choices are remembered. Fixed pacing sends pending movement on a regular schedule; idle ticks send nothing. Android scheduling may delay delivery.",12));
             cameraToggle = new Switch(c);
             cameraToggle.setText("Frame generation on camera-look gestures");
             cameraToggle.setTextColor(Color.WHITE);

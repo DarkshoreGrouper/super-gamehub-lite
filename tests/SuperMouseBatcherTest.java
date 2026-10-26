@@ -24,6 +24,47 @@ public final class SuperMouseBatcherTest {
         public void removeCallbacks(Runnable task) { if (this.task==task) this.task=null; }
         void fire() { Runnable next=task; task=null; if(next!=null) next.run(); }
     }
+    static final class ClockTimer implements SuperMouseBatcher.Scheduler {
+        long now, due; Runnable task;
+        public long nowNanos() { return now; }
+        public boolean postDelayed(Runnable value,long delay) {
+            check(task==null,"one paced callback"); task=value; due=now+delay*1_000_000; return true;
+        }
+        public void removeCallbacks(Runnable value) { if(task==value) task=null; }
+        void advance(long millis) { now=millis*1_000_000; }
+        void fireAt(long millis) { advance(millis); Runnable value=task; task=null; value.run(); }
+    }
+    static void pacingTests() {
+        ClockTimer clock=new ClockTimer(); Sink sink=new Sink(); SuperMouseBatcher b=new SuperMouseBatcher(clock);
+        b.setRateHz(100); b.setFixedPacing(true); b.setEnabled(true);
+        move(b,sink,2,3); clock.advance(4); move(b,sink,4,5);
+        check(clock.due==10_000_000,"100 Hz starts at 10 ms");
+        clock.fireAt(10); near(sink.events.get(0).x,6); check(clock.task==null,"idle has no timer");
+        clock.advance(14); move(b,sink,1,2);
+        check(clock.due==20_000_000,"next event keeps phase instead of waiting a fresh 10 ms");
+        clock.fireAt(37); check(sink.events.size()==2 && clock.task==null,"late delivery sends once");
+        clock.advance(38); move(b,sink,3,4); check(clock.due==40_000_000,"late delivery skips missed ticks");
+        clock.fireAt(40);
+        clock.advance(41); move(b,sink,5,6); b.setFixedPacing(false);
+        near(sink.events.get(3).x,5); check(clock.task==null,"mode change flushes and cancels");
+        clock.advance(44); move(b,sink,7,8); check(clock.due==54_000_000,"original window remains available");
+        b.setFixedPacing(true); check(clock.task==null,"switch back flushes pending");
+        move(b,sink,1,1); move(b,sink,-1,-1); int before=sink.events.size();
+        clock.fireAt(54); check(sink.events.size()==before,"no empty movement send");
+        clock.advance(500); move(b,sink,8,9); check(clock.due==504_000_000,"idle restart stays on phase");
+        b.send(sink,0,0,1,true,true,true);
+        check(clock.task==null && sink.events.get(sink.events.size()-1).kind==1,"paced movement flushed before buttons");
+        move(b,sink,2,2); b.setEnabled(false); check(clock.task==null,"disable drains paced tail");
+        // Fractional periods must not drift to rounded 17 ms intervals.
+        ClockTimer fractional=new ClockTimer(); SuperMouseBatcher f=new SuperMouseBatcher(fractional); Sink output=new Sink();
+        f.setFixedPacing(true); f.setEnabled(true);
+        move(f,output,1,0); check(fractional.due==17_000_000,"60 Hz first rounded wakeup");
+        fractional.fireAt(17); fractional.advance(18); move(f,output,1,0);
+        check(fractional.due==34_000_000,"60 Hz second wakeup");
+        fractional.fireAt(34); fractional.advance(35); move(f,output,1,0);
+        check(fractional.due==51_000_000,"fractional deadline retained with ceil wakeup");
+        System.out.println("PASS: fixed phase, late ticks, idle, no empty sends, mode changes, boundary order and fractional periods.");
+    }
     static void check(boolean pass,String name) { if(!pass) throw new AssertionError(name); }
     static void near(float value,float expected) { check(Math.abs(value-expected)<0.0001,"delta preserved: "+value+" != "+expected); }
     static void move(SuperMouseBatcher b,Sink s,float x,float y) { b.send(s,x,y,0,false,true,true); }
@@ -75,7 +116,7 @@ public final class SuperMouseBatcherTest {
 
         Timer rateTimer=new Timer(); Sink rateSink=new Sink(); SuperMouseBatcher rates=new SuperMouseBatcher(rateTimer);
         rates.setEnabled(true);
-        int[] choices={40,45,50,55,60}; long[] windows={25,22,20,18,17};
+        int[] choices={40,45,50,55,60,75,90,100}; long[] windows={25,22,20,18,17,13,11,10};
         for(int i=0;i<choices.length;i++) {
             rates.setRateHz(choices[i]); rateTimer.expectedDelay=windows[i];
             move(rates,rateSink,2,3); move(rates,rateSink,4,5);
@@ -84,15 +125,15 @@ public final class SuperMouseBatcherTest {
         }
         move(rates,rateSink,9,10);
         rates.setRateHz(40);
-        check(rateTimer.task==null && rateSink.events.size()==6,"changing rate flushes pending movement and cancels old deadline");
-        near(rateSink.events.get(5).x,9);
+        check(rateTimer.task==null && rateSink.events.size()==9,"changing rate flushes pending movement and cancels old deadline");
+        near(rateSink.events.get(8).x,9);
         rateTimer.expectedDelay=25; move(rates,rateSink,7,8);
         for(int invalid:new int[]{0,39,41,44,46,59,61,120}) {
             try { rates.setRateHz(invalid); throw new AssertionError("invalid rate accepted"); }
             catch(IllegalArgumentException expected) {}
         }
         check(rates.getRateHz()==40 && rateTimer.task!=null,"invalid rate leaves active batch intact");
-        rateTimer.fire(); near(rateSink.events.get(6).x,7);
+        rateTimer.fire(); near(rateSink.events.get(9).x,7);
 
         SuperInputStats.setBatchingEnabled(true); SuperInputStats.setBatchingRateHz(45); SuperInputStats.setEnabled(true);
         SuperInputStats.recordMouseInput(0,true); SuperInputStats.recordMouseInput(0,true);
@@ -102,6 +143,7 @@ public final class SuperMouseBatcherTest {
         check(report.contains("Incoming mouse movement calls: 2") && report.contains("Mouse movement calls: 1"),"incoming and forwarded counters");
         check(report.contains("at start: ON") && report.contains("changes during recording: 1"),"report records mode changes");
         check(report.contains("rate at start: 45 Hz") && report.contains("rate at report: 50 Hz (20 ms window); rate changes during recording: 1"),"report records rate and rate changes");
-        System.out.println("PASS: passthrough, summed deltas, bounded scheduling, button/wheel/absolute order, disable/tail flush, thread/sender/flag boundaries, scheduler fallback, long run, all five rates, rate-change flushing, invalid rates and mode/rate reports.");
+        pacingTests();
+        System.out.println("PASS: passthrough, summed deltas, bounded scheduling, button/wheel/absolute order, disable/tail flush, thread/sender/flag boundaries, scheduler fallback, long run, all eight rates, rate-change flushing, invalid rates and mode/rate reports.");
     }
 }
