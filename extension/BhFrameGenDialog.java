@@ -123,8 +123,8 @@ public class BhFrameGenDialog extends Dialog {
                 if (!fromUser) return;
                 BhFrameGenSettings.Preset p = BhFrameGenSettings.Preset.values()[progress];
                 settings.applyPreset(p);
-                BhFrameGenWriter.write(controlPath, settings);
                 settings.save(getContext());
+                BhFrameGenWriter.write(controlPath, settings);
                 if (sbFlowScale != null) sbFlowScale.setProgress(flowScaleToProgress(settings.flowScale));
                 if (tvFlowScaleValue != null) tvFlowScaleValue.setText(formatFloat(settings.flowScale));
                 updatePresetLabel();
@@ -194,8 +194,8 @@ public class BhFrameGenDialog extends Dialog {
                 tvFlowScaleValue.setText(formatFloat(v));
                 if (!fromUser) return;
                 settings.flowScale = v;
-                BhFrameGenWriter.writeFlowScale(controlPath, v);
                 settings.save(getContext());
+                BhFrameGenWriter.writeFlowScale(controlPath, v);
             }
             @Override public void onStartTrackingTouch(SeekBar b) {}
             @Override public void onStopTrackingTouch(SeekBar b) {}

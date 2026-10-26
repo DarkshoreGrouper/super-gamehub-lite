@@ -26,6 +26,7 @@ public final class SuperMouseInput {
     public static void flush() { BATCHER.flush(); }
     public static void send(SuperMouseBatcher.Sender sender, float x, float y, int kind,
                             boolean down, boolean relative) {
+        SuperCameraFrameGen.mouse(x,y,kind,down,relative);
         if (!enabled && !SuperInputStats.enabled) {
             sender.sendMouseEvent(x,y,kind,down,relative);
             return;

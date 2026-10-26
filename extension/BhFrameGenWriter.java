@@ -20,6 +20,11 @@ import java.nio.channels.FileChannel;
 public class BhFrameGenWriter {
 
     public static void applyFromPrefs(Context ctx) {
+        android.content.SharedPreferences prefs = ctx.getSharedPreferences("super_diagnostics",Context.MODE_PRIVATE);
+        int rate = prefs.getInt("batching_rate_hz",SuperMouseBatcher.DEFAULT_RATE_HZ);
+        SuperMouseInput.setRateHz(SuperMouseBatcher.isSupportedRateHz(rate) ? rate : SuperMouseBatcher.DEFAULT_RATE_HZ);
+        SuperMouseInput.setEnabled(prefs.getBoolean("batching_enabled",true));
+        SuperCameraFrameGen.initialize(ctx);
         BhFrameGenSettings s = BhFrameGenSettings.load(ctx);
         write(resolveControlPath(ctx), s);
         BhVulkanIcdWriter.ensureIcdJson(ctx);
@@ -37,7 +42,12 @@ public class BhFrameGenWriter {
         } catch (Exception ignored) {}
     }
 
-    public static void write(String controlPath, BhFrameGenSettings s) {
+    public static synchronized void write(String controlPath, BhFrameGenSettings s) {
+        if (SuperCameraFrameGen.isEnabled()) { SuperCameraFrameGen.requestApply(); return; }
+        writeDirect(controlPath,s);
+    }
+
+    static synchronized void writeDirect(String controlPath, BhFrameGenSettings s) {
         if (controlPath == null || controlPath.isEmpty() || s == null) return;
         try {
             File f = new File(controlPath);
@@ -58,15 +68,18 @@ public class BhFrameGenWriter {
         } catch (Exception ignored) {}
     }
 
-    public static void writeEnabled(String controlPath, boolean enabled) {
+    public static synchronized void writeEnabled(String controlPath, boolean enabled) {
+        if (SuperCameraFrameGen.isEnabled()) { SuperCameraFrameGen.requestApply(); return; }
         writeByteAt(controlPath, 2, (byte) (enabled ? 1 : 0));
     }
 
-    public static void writeModel(String controlPath, int model) {
+    public static synchronized void writeModel(String controlPath, int model) {
+        if (SuperCameraFrameGen.isEnabled()) { SuperCameraFrameGen.requestApply(); return; }
         writeByteAt(controlPath, 8, (byte) (model & 0x01));
     }
 
-    public static void writeFlowScale(String controlPath, float flowScale) {
+    public static synchronized void writeFlowScale(String controlPath, float flowScale) {
+        if (SuperCameraFrameGen.isEnabled()) { SuperCameraFrameGen.requestApply(); return; }
         try (RandomAccessFile raf = new RandomAccessFile(controlPath, "rw")) {
             if (raf.length() < 10) raf.setLength(10);
             MappedByteBuffer buf = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, 10);

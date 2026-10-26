@@ -2,9 +2,11 @@
 
 Open the in-game sidebar and select **SUPER**, the fourth settings tab below
 Controls, Performance and Settings. The keyboard shortcut remains separate.
-The experimental batching switch and native stepped rate slider stay visible.
-The slider reuses SidebarProgressItemView / SingleDragSeekbar from the
-Performance tab (40–60 in steps of 5). Tap **Reports** to expand or
+Batching and gated frame generation use persistent native radio lists.
+Both lists reuse CollapseMenuSettingView / CollapseItemMenu, including the
+stock radio/check icons, animated expansion and focus handling. The batching
+list offers 40/45/50/55/60 Hz. The independent frame-generation preset list
+defaults to Flow. A third list chooses the frame-generation trigger. Tap **Reports** to expand or
 collapse all recording, saved-report and copy controls. Collapsing does not
 stop recording, and the header shows when recording remains active. Expansion
 state is remembered; saved reports from older app versions remain available.
@@ -15,14 +17,13 @@ setup/callbacks; no reflection was added to input dispatch.
 
 ## Optional batching experiment
 
-**Experimental mouse batching** is OFF for each new game session and is
+**Experimental mouse batching** defaults to ON, remembers explicit toggle choices, and is
 independent of diagnostic recording. ON combines only relative movement
 (kind 0, final boolean true) arriving on the main thread. The sum of deltas is
 held in one accumulator. The selected nominal rate maps to a rounded
 window: 40 Hz = 25 ms, 45 = 22 ms, 50 = 20 ms, 55 = 18 ms, 60 = 17 ms.
 60 Hz is the default and preserves the original experiment. The chosen rate
-is remembered across restarts; enabling batching still defaults to OFF for
-each game session. Changing the rate flushes any pending movement before
+is remembered across restarts independently of the batching toggle. Changing the rate flushes any pending movement before
 applying the new interval. Actual
 rate depends on event timing; this is not a display-frame or FPS limiter.
 The first event sets the deadline; later events never postpone it. Scheduling

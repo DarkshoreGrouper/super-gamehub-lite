@@ -54,8 +54,8 @@ public class BhFrameGenWiring {
                 boolean newState = !s.enabled;
                 s.enabled = newState;
                 invokeSetSwitch(v, newState);
-                BhFrameGenWriter.writeEnabled(BhFrameGenWriter.resolveControlPath(ctx), newState);
                 s.save(ctx);
+                BhFrameGenWriter.writeEnabled(BhFrameGenWriter.resolveControlPath(ctx), newState);
                 if (gearButton != null) {
                     gearButton.setVisibility(newState ? View.VISIBLE : View.GONE);
                 }

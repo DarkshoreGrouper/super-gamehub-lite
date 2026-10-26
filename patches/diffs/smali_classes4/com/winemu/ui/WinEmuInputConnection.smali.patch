@@ -1,0 +1,8 @@
+--- a/smali_classes4/com/winemu/ui/WinEmuInputConnection.smali
++++ b/smali_classes4/com/winemu/ui/WinEmuInputConnection.smali
+@@ -53 +53 @@
+-    invoke-virtual {v0, v2, p1, v1}, Lcom/winemu/core/server/XServer;->sendKeyEvent(IIZ)Z
++    invoke-virtual {v0, v2, p1, v1}, Lcom/winemu/core/server/XServer;->sendKeyEventObserved(IIZ)Z
+@@ -59 +59 @@
+-    invoke-virtual {v0, v2, p1, v2}, Lcom/winemu/core/server/XServer;->sendKeyEvent(IIZ)Z
++    invoke-virtual {v0, v2, p1, v2}, Lcom/winemu/core/server/XServer;->sendKeyEventObserved(IIZ)Z

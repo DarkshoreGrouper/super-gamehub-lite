@@ -65,6 +65,7 @@ public final class SuperDiagnostics {
 
     public static void onTouch(MotionEvent event) {
         int action = event.getActionMasked();
+        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) SuperCameraFrameGen.endGesture();
         if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL
             || action == MotionEvent.ACTION_POINTER_UP || action == MotionEvent.ACTION_DOWN
             || action == MotionEvent.ACTION_POINTER_DOWN) SuperMouseInput.flush();
@@ -135,6 +136,7 @@ public final class SuperDiagnostics {
     }
 
     public static void stop() {
+        SuperCameraFrameGen.stopGame();
         SuperMouseInput.setEnabled(false);
         SuperInputStats.setEnabled(false);
     }
@@ -156,36 +158,41 @@ public final class SuperDiagnostics {
         }
     }
 
-    private interface RateListener { void changed(int rate); }
-    private static View rateSlider(Context c, int rate, final RateListener listener) {
-        final View row = sidebarRow(c,"com.xj.winemu.view.SidebarProgressItemView");
+    private interface ChoiceListener { void changed(int selection); }
+    private static java.util.List<Object> menuItems(Context c, String[] labels, int selection)
+            throws ReflectiveOperationException {
+        java.lang.reflect.Constructor<?> constructor = Class.forName("com.xj.winemu.bean.CollapseItemMenu",true,c.getClassLoader())
+            .getConstructor(String.class,boolean.class);
+        java.util.List<Object> items = new java.util.ArrayList<>();
+        for (int i=0; i<labels.length; i++) items.add(constructor.newInstance(labels[i],i==selection));
+        return items;
+    }
+    private static View choiceList(Context c, String title, String[] labels, int selection, ChoiceListener listener) {
+        final View row = sidebarRow(c,"com.xj.winemu.view.CollapseMenuSettingView");
         try {
-            row.getClass().getMethod("setLeftTopText",String.class).invoke(row,"Mouse batching rate");
-            row.getClass().getMethod("setProcessTextSuffix",String.class).invoke(row," Hz");
-            View seekbar = named(row,"seekbar");
-            if (seekbar == null) throw new IllegalStateException("Native seekbar unavailable");
-            seekbar.getClass().getMethod("q",int.class,int.class,int.class,int.class).invoke(seekbar,40,60,rate,5);
-            row.getClass().getMethod("setProgress",int.class).invoke(row,rate);
+            java.lang.reflect.Method items = row.getClass().getMethod("E",java.util.List.class);
+            java.lang.reflect.Method heading = row.getClass().getMethod("G",String.class);
+            items.invoke(row,menuItems(c,labels,selection));
+            heading.invoke(row,title + ": " + labels[selection]);
             Class<?> function = Class.forName("kotlin.jvm.functions.Function2",true,c.getClassLoader());
             Object callback = Proxy.newProxyInstance(function.getClassLoader(),new Class<?>[]{function},(proxy,method,args) -> {
                 if (method.getName().equals("invoke")) {
-                    int value = ((Number)args[0]).intValue();
-                    if (Boolean.TRUE.equals(args[1]) && SuperMouseBatcher.isSupportedRateHz(value)) {
-                        row.setContentDescription("Mouse batching rate: " + value + " Hz");
-                        listener.changed(value);
+                    int index = ((Number)args[0]).intValue();
+                    if (index >= 0 && index < labels.length) {
+                        listener.changed(index);
+                        items.invoke(row,menuItems(c,labels,index));
+                        heading.invoke(row,title + ": " + labels[index]);
                     }
-                    // The native row ignores Function2's return and returns Kotlin Unit itself.
                     return null;
                 }
                 if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
                 if (method.getName().equals("equals")) return proxy == args[0];
-                return "Super batching rate listener";
+                return "Super radio selection listener";
             });
-            row.getClass().getMethod("setProgressListener",function).invoke(row,callback);
-            row.setContentDescription("Mouse batching rate: " + rate + " Hz");
+            row.getClass().getMethod("F",function).invoke(row,callback);
             return row;
         } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Could not configure native stepped slider",e);
+            throw new IllegalStateException("Could not configure native radio list",e);
         }
     }
 
@@ -193,6 +200,10 @@ public final class SuperDiagnostics {
         private final TextView counters;
         private final Switch toggle;
         private final Switch batchToggle;
+        private final Switch cameraToggle;
+        private final TextView cameraStatus;
+        private final Button learnTrigger;
+        private final Button resetTrigger;
         private final View reportsHeader;
         private final View reportsArrow;
         private final LinearLayout reports;
@@ -221,11 +232,54 @@ public final class SuperDiagnostics {
             batchToggle.setTextColor(Color.WHITE);
             batchToggle.setChecked(SuperMouseInput.isEnabled());
             column.addView(batchToggle,new LinearLayout.LayoutParams(-1,dp(c,64)));
-            column.addView(rateSlider(c,SuperMouseInput.getRateHz(),rate -> {
-                SuperMouseInput.setRateHz(rate);
-                preferences.edit().putInt("batching_rate_hz",rate).apply();
-            }),new LinearLayout.LayoutParams(-1,-2));
-            column.addView(text(c,"40 / 45 / 50 / 55 / 60 Hz. Combines relative mouse movement; lower rates use longer windows. Compare ON and OFF. Off by default for each game session.",12));
+            final int[] rates = {40,45,50,55,60};
+            column.addView(choiceList(c,"Batching rate",new String[]{"40 Hz","45 Hz","50 Hz","55 Hz","60 Hz"},
+                (SuperMouseInput.getRateHz()-40)/5,index -> {
+                    SuperMouseInput.setRateHz(rates[index]);
+                    preferences.edit().putInt("batching_rate_hz",rates[index]).apply();
+                }),new LinearLayout.LayoutParams(-1,-2));
+            column.addView(text(c,"Batching starts enabled by default. Your toggle and rate choices are remembered.",12));
+            cameraToggle = new Switch(c);
+            cameraToggle.setText("Frame generation on camera-look gestures");
+            cameraToggle.setTextColor(Color.WHITE);
+            cameraToggle.setChecked(SuperCameraFrameGen.isEnabled());
+            column.addView(cameraToggle,new LinearLayout.LayoutParams(-1,dp(c,64)));
+            final BhFrameGenSettings.Preset[] presets = BhFrameGenSettings.Preset.values();
+            String[] presetLabels = new String[presets.length];
+            for (int i=0; i<presets.length; i++) presetLabels[i] = presets[i].getLabel(c);
+            column.addView(choiceList(c,"Camera frame-gen preset",presetLabels,
+                SuperCameraFrameGen.selectedPreset(c).ordinal(),index -> SuperCameraFrameGen.setPreset(c,presets[index])),
+                new LinearLayout.LayoutParams(-1,-2));
+            final SuperCameraMotion.Trigger[] triggers = SuperCameraMotion.Trigger.values();
+            String[] triggerLabels = {"Right mouse held + movement","Left mouse held + movement","Middle mouse held + movement",
+                "Left or right mouse held + movement","Learned key held + movement","Learned key toggle + movement"};
+            column.addView(choiceList(c,"Frame-gen trigger",triggerLabels,SuperCameraFrameGen.selectedTrigger(c).ordinal(),
+                index -> { SuperCameraFrameGen.setTrigger(c,triggers[index]); refresh(); }),new LinearLayout.LayoutParams(-1,-2));
+            learnTrigger = new Button(c);
+            learnTrigger.setOnClickListener(v -> {
+                if (SuperCameraFrameGen.isLearning()) SuperCameraFrameGen.cancelLearning();
+                else {
+                    SuperCameraFrameGen.learnKey();
+                    Toast.makeText(c,"Close the sidebar and press your mapped game key or keyboard key. Input is still sent to the game.",Toast.LENGTH_LONG).show();
+                }
+                refresh();
+            });
+            column.addView(learnTrigger,new LinearLayout.LayoutParams(-1,-2));
+            resetTrigger = new Button(c); resetTrigger.setText("Reset learned toggle state to OFF");
+            resetTrigger.setOnClickListener(v -> { SuperCameraFrameGen.resetTrigger(); refresh(); });
+            column.addView(resetTrigger,new LinearLayout.LayoutParams(-1,-2));
+            cameraStatus = text(c,"",12);
+            column.addView(cameraStatus);
+            column.addView(text(c,"Choose the button/key your game's camera uses. A latched mouse button counts as held. Key-toggle mode follows each press; reset its state if the game and trigger get out of sync. Left-button item dragging is suppressed except in explicit left-button trigger modes. Walking is not required. Cursor movement alone stays off. Stops on release or after 100 ms without movement. This detects input, not the game's camera angle. Requires GameScopeVK. Turning this feature off restores Performance-tab frame-generation settings.",12));
+            cameraToggle.setOnCheckedChangeListener((button,checked) -> {
+                if (checked && !SuperCameraFrameGen.supported(c)) {
+                    Toast.makeText(c,"Camera frame generation requires the GameScopeVK driver",Toast.LENGTH_LONG).show();
+                    button.setChecked(false);
+                    return;
+                }
+                SuperCameraFrameGen.setEnabled(c,checked);
+                refresh();
+            });
             reportsHeader = sidebarRow(c,"com.xj.winemu.view.SidebarClickItemView");
             reportsArrow = named(reportsHeader,"iv_icon");
             ((TextView)named(reportsHeader,"tv_name")).setText("Reports");
@@ -276,6 +330,7 @@ public final class SuperDiagnostics {
             reports.addView(text(c,"Choose batching ON or OFF before each test. Record, add a label/FPS, then Stop + save report. Enable recording again for a fresh test. Copy all saved reports when finished. Saved reports survive app updates. Collapsing Reports keeps recording active.\n\nNative movement counts are actual forwarded calls; incoming counts show the original traffic. Send time measures the native call, not total Wine or game latency.",12));
             batchToggle.setOnCheckedChangeListener((button,checked) -> {
                 SuperMouseInput.setEnabled(checked);
+                preferences.edit().putBoolean("batching_enabled",checked).apply();
                 refresh();
             });
             toggle.setOnCheckedChangeListener((button,checked) -> {
@@ -327,6 +382,14 @@ public final class SuperDiagnostics {
             refresh();
         }
         void refresh() {
+            if (cameraToggle.isChecked() != SuperCameraFrameGen.isEnabled()) cameraToggle.setChecked(SuperCameraFrameGen.isEnabled());
+            boolean keyTrigger = SuperCameraFrameGen.selectedTrigger(getContext()) == SuperCameraMotion.Trigger.KEY_HELD
+                || SuperCameraFrameGen.selectedTrigger(getContext()) == SuperCameraMotion.Trigger.KEY_TOGGLE;
+            learnTrigger.setVisibility(keyTrigger ? View.VISIBLE : View.GONE);
+            resetTrigger.setVisibility(SuperCameraFrameGen.selectedTrigger(getContext()) == SuperCameraMotion.Trigger.KEY_TOGGLE ? View.VISIBLE : View.GONE);
+            learnTrigger.setText(SuperCameraFrameGen.isLearning() ? "Cancel learning" : "Learn trigger key (" + SuperCameraFrameGen.keyLabel(getContext()) + ")");
+            cameraStatus.setText("Trigger movement: " + (SuperCameraFrameGen.isActive() ? "moving" : "idle")
+                + (SuperCameraFrameGen.supported(getContext()) ? "" : " · GameScopeVK unavailable"));
             if (batchToggle.isChecked() != SuperMouseInput.isEnabled()) batchToggle.setChecked(SuperMouseInput.isEnabled());
             TextView reportDescription = (TextView)named(reportsHeader,"tv_desc");
             reportDescription.setText(saved.length() + " saved" + (SuperInputStats.enabled ? " · recording" : ""));
@@ -353,7 +416,7 @@ public final class SuperDiagnostics {
         String version = "unknown";
         try { version = c.getPackageManager().getPackageInfo(c.getPackageName(),0).versionName; }
         catch (android.content.pm.PackageManager.NameNotFoundException ignored) {}
-        return SuperInputStats.report() + "\nDevice: " + Build.MANUFACTURER + " " + Build.MODEL
+        return SuperInputStats.report() + SuperCameraFrameGen.summary(c) + "\nDevice: " + Build.MANUFACTURER + " " + Build.MODEL
             + "\nAndroid: " + Build.VERSION.RELEASE + "\nApp: " + c.getPackageName() + " " + version;
     }
 

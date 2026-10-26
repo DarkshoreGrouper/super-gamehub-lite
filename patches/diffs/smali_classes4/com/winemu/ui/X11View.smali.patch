@@ -1,0 +1,11 @@
+--- a/smali_classes4/com/winemu/ui/X11View.smali
++++ b/smali_classes4/com/winemu/ui/X11View.smali
+@@ -202 +202 @@
+-    invoke-virtual {v0, v1, p0, v1}, Lcom/winemu/core/server/XServer;->sendKeyEvent(IIZ)Z
++    invoke-virtual {v0, v1, p0, v1}, Lcom/winemu/core/server/XServer;->sendKeyEventObserved(IIZ)Z
+@@ -613 +613 @@
+-    invoke-virtual {v0, v2, p1, v2}, Lcom/winemu/core/server/XServer;->sendKeyEvent(IIZ)Z
++    invoke-virtual {v0, v2, p1, v2}, Lcom/winemu/core/server/XServer;->sendKeyEventObserved(IIZ)Z
+@@ -624 +624 @@
+-    invoke-virtual {v0, v2, p1, v1}, Lcom/winemu/core/server/XServer;->sendKeyEvent(IIZ)Z
++    invoke-virtual {v0, v2, p1, v1}, Lcom/winemu/core/server/XServer;->sendKeyEventObserved(IIZ)Z

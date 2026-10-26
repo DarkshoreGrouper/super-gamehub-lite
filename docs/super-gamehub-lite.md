@@ -45,8 +45,9 @@ See signing-and-updates.md for the one-time migration and future updates.
   point for inspection, not a confirmed injection location.
 - An opt-in relative mouse batching experiment is implemented in SUPER:
   one accumulator on the Android main thread, preserving delta sums and
-  flushing before mouse button changes and at gesture end. Default remains OFF.
-  The native stepped slider selects 40/45/50/55/60 Hz (60 retains 17 ms).
+  flushing before mouse button changes and at gesture end. Batching defaults
+  to ON and remembers explicit choices. A native radio list selects
+  40/45/50/55/60 Hz (60 retains 17 ms).
   Reports use the native collapse header and include incoming/forwarded
   counters, mode and rate.
   Compare its on-device performance and camera feel before tuning intervals.
