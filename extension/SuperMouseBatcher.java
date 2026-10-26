@@ -76,7 +76,7 @@ public final class SuperMouseBatcher {
         return !Float.isNaN(value) && !Float.isInfinite(value);
     }
     private static void deliver(Sender sender, float x, float y, int kind, boolean down, boolean relative) {
-        if (!SuperInputStats.enabled) {
+        if (!SuperInputStats.enabled && !SuperInputStats.liveEnabled) {
             sender.sendMouseEvent(x,y,kind,down,relative);
             return;
         }

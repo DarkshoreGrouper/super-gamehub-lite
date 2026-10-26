@@ -1,4 +1,4 @@
-# Mouse Input Diagnostics v3 and experimental batching
+# Mouse Input Diagnostics v4 and experimental batching
 
 Open the in-game sidebar and select **SUPER**, the fourth settings tab below
 Controls, Performance and Settings. The keyboard shortcut remains separate.
@@ -120,3 +120,27 @@ failure fallback, a long simulated stream, all five supported rates, invalid
 rates, draining during rate changes, and incoming/forwarded mode/rate reports.
 Full fork build and on-phone interaction are validated separately through CI
 and the installed APK; compilation alone does not establish runtime correctness.
+
+## Independent diagnostics HUD
+
+The **Diagnostics HUD** switch is independent of recording and is remembered.
+It shows runtime batching state (including a state mismatch if the adapter and
+accumulator ever disagree), live incoming -> forwarded mouse-movement rates,
+mouse-button/key latch state, gate activation count, the last verified FG
+control write and successful ON-write/error counts. It refreshes every 200 ms;
+live mouse rates use windows of at least 500 ms. HUD sampling has overhead and
+is off by default. Recording retains its existing overlay when this HUD is off.
+
+To compare batching, disable gated FG, keep other game settings fixed and swipe
+with batching OFF and ON. OFF normally forwards each movement; ON can reduce
+forwarded calls when eligible events share a window. Actual results depend on
+relative/main-thread event eligibility and boundaries. Reports now distinguish
+main-thread relative calls from non-main relative calls that bypass batching.
+
+FG mode ON is only the feature setting. Gate ON means the selected input
+condition is active. `ON (readback OK)` confirms the written control flag was
+read back from the file; it does **not** prove the native library generated any
+frames. ON-write and activation counts remain visible after a swipe ends.
+Control write failures are surfaced, rather than silently discarded. The pure
+control-file tests verify ON/OFF readback, presets and preservation of unrelated
+FPS-limit/render-mode bytes, and exercise surfaced failures.

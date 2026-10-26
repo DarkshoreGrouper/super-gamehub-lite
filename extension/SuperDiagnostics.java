@@ -37,7 +37,12 @@ public final class SuperDiagnostics {
     private static final String TAB = "super.diagnostics.tab";
     private static final String OVERLAY = "super.diagnostics.overlay";
     private static final int CYAN = 0xff76e4ef;
+    private static volatile boolean hudEnabled;
     private SuperDiagnostics() {}
+    public static void configureHud(Context c) {
+        hudEnabled=c.getSharedPreferences("super_diagnostics",Context.MODE_PRIVATE).getBoolean("diagnostics_hud",false);
+        SuperInputStats.setLiveEnabled(hudEnabled);
+    }
 
     private static int dp(Context c, int value) {
         return Math.round(value * c.getResources().getDisplayMetrics().density);
@@ -139,6 +144,7 @@ public final class SuperDiagnostics {
         SuperCameraFrameGen.stopGame();
         SuperMouseInput.setEnabled(false);
         SuperInputStats.setEnabled(false);
+        SuperInputStats.setLiveEnabled(false);
     }
 
     private static TextView text(Context c, String value, int size) {
@@ -200,6 +206,7 @@ public final class SuperDiagnostics {
         private final TextView counters;
         private final Switch toggle;
         private final Switch batchToggle;
+        private final Switch hudToggle;
         private final Switch cameraToggle;
         private final TextView cameraStatus;
         private final Button learnTrigger;
@@ -214,6 +221,7 @@ public final class SuperDiagnostics {
         DiagnosticsPanel(final Context c) {
             super(c);
             preferences = c.getApplicationContext().getSharedPreferences("super_diagnostics", Context.MODE_PRIVATE);
+            configureHud(c);
             int storedRate = preferences.getInt("batching_rate_hz",SuperMouseBatcher.DEFAULT_RATE_HZ);
             SuperMouseInput.setRateHz(SuperMouseBatcher.isSupportedRateHz(storedRate) ? storedRate : SuperMouseBatcher.DEFAULT_RATE_HZ);
             try { saved = new JSONArray(preferences.getString("reports", "[]")); }
@@ -227,6 +235,13 @@ public final class SuperDiagnostics {
             TextView title = text(c,"Super Gamehub Lite",20);
             title.setTextColor(CYAN); title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
             column.addView(title);
+            hudToggle=new Switch(c);
+            hudToggle.setText("Diagnostics HUD"); hudToggle.setTextColor(Color.WHITE); hudToggle.setChecked(hudEnabled);
+            column.addView(hudToggle,new LinearLayout.LayoutParams(-1,dp(c,52)));
+            hudToggle.setOnCheckedChangeListener((button,checked) -> {
+                hudEnabled=checked; SuperInputStats.setLiveEnabled(checked);
+                preferences.edit().putBoolean("diagnostics_hud",checked).apply(); updateOverlay(c);
+            });
             batchToggle = new Switch(c);
             batchToggle.setText("Experimental mouse batching");
             batchToggle.setTextColor(Color.WHITE);
@@ -388,7 +403,7 @@ public final class SuperDiagnostics {
             learnTrigger.setVisibility(keyTrigger ? View.VISIBLE : View.GONE);
             resetTrigger.setVisibility(SuperCameraFrameGen.selectedTrigger(getContext()) == SuperCameraMotion.Trigger.KEY_TOGGLE ? View.VISIBLE : View.GONE);
             learnTrigger.setText(SuperCameraFrameGen.isLearning() ? "Cancel learning" : "Learn trigger key (" + SuperCameraFrameGen.keyLabel(getContext()) + ")");
-            cameraStatus.setText("Trigger movement: " + (SuperCameraFrameGen.isActive() ? "moving" : "idle")
+            cameraStatus.setText(SuperCameraFrameGen.hudSummary()
                 + (SuperCameraFrameGen.supported(getContext()) ? "" : " · GameScopeVK unavailable"));
             if (batchToggle.isChecked() != SuperMouseInput.isEnabled()) batchToggle.setChecked(SuperMouseInput.isEnabled());
             TextView reportDescription = (TextView)named(reportsHeader,"tv_desc");
@@ -408,7 +423,7 @@ public final class SuperDiagnostics {
             savedList.setText(list.toString());
         }
         public void run() { if (isShown()) refresh(); postDelayed(this,1000); }
-        protected void onAttachedToWindow() { super.onAttachedToWindow(); removeCallbacks(this); post(this); }
+        protected void onAttachedToWindow() { super.onAttachedToWindow(); removeCallbacks(this); post(this); post(() -> updateOverlay(getContext())); }
         protected void onDetachedFromWindow() { removeCallbacks(this); super.onDetachedFromWindow(); }
     }
 
@@ -416,7 +431,7 @@ public final class SuperDiagnostics {
         String version = "unknown";
         try { version = c.getPackageManager().getPackageInfo(c.getPackageName(),0).versionName; }
         catch (android.content.pm.PackageManager.NameNotFoundException ignored) {}
-        return SuperInputStats.report() + SuperCameraFrameGen.summary(c) + "\nDevice: " + Build.MANUFACTURER + " " + Build.MODEL
+        return SuperInputStats.report() + "\n"+SuperMouseInput.liveSummary()+"\n" + SuperCameraFrameGen.summary(c) + "\nDevice: " + Build.MANUFACTURER + " " + Build.MODEL
             + "\nAndroid: " + Build.VERSION.RELEASE + "\nApp: " + c.getPackageName() + " " + version;
     }
 
@@ -438,7 +453,7 @@ public final class SuperDiagnostics {
         ViewGroup content = a.findViewById(android.R.id.content);
         if (!(content instanceof FrameLayout)) return;
         DiagnosticsOverlay overlay = content.findViewWithTag(OVERLAY);
-        if (overlay == null && SuperInputStats.enabled) {
+        if (overlay == null && (SuperInputStats.enabled || hudEnabled)) {
             overlay = new DiagnosticsOverlay(a);
             overlay.setTag(OVERLAY);
             FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.RIGHT);
@@ -459,10 +474,10 @@ public final class SuperDiagnostics {
         }
         void start() { removeCallbacks(this); run(); }
         public void run() {
-            if (!SuperInputStats.enabled) { setVisibility(View.GONE); return; }
+            if (!SuperInputStats.enabled && !hudEnabled) { setVisibility(View.GONE); return; }
             setVisibility(View.VISIBLE);
-            setText("SUPER INPUT\n" + SuperInputStats.summary());
-            postDelayed(this,1000);
+            setText("SUPER INPUT\n" + (hudEnabled ? SuperMouseInput.liveSummary()+"\n"+SuperCameraFrameGen.hudSummary() : SuperInputStats.summary()));
+            postDelayed(this,hudEnabled ? 200 : 1000);
         }
         protected void onDetachedFromWindow() { removeCallbacks(this); super.onDetachedFromWindow(); }
     }

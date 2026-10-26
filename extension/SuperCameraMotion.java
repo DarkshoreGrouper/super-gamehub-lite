@@ -9,6 +9,11 @@ public final class SuperCameraMotion {
     private boolean keyDown, keyLatched, active;
     private long lastMove;
     public synchronized boolean isActive() { return active; }
+    public synchronized String debugSummary() {
+        return "L:"+((buttons&2)!=0?1:0)+" M:"+((buttons&4)!=0?1:0)+" R:"+((buttons&8)!=0?1:0)
+            + " key:"+(keyDown?1:0)+" latch:"+(keyLatched?1:0)
+            + "\nTrigger:"+(held()?"HELD":"NOT HELD / LEFT DRAG")+" gate:"+(active?"ON":"OFF");
+    }
     public synchronized void configure(Trigger value,int code,int character) {
         if (trigger == value && keyCode == code && keyChar == character) return;
         trigger=value; keyCode=code; keyChar=character; keyDown=keyLatched=active=false;

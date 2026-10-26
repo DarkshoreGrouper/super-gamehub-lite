@@ -13,6 +13,11 @@ public final class SuperMouseInput {
     });
     private SuperMouseInput() {}
     public static boolean isEnabled() { return enabled; }
+    public static String liveSummary() {
+        boolean actual=BATCHER.isEnabled();
+        return "BATCH "+(enabled?"ON":"OFF")+" @"+BATCHER.getRateHz()+" Hz"
+            +(actual!=enabled?" STATE MISMATCH":"")+"\n"+(SuperInputStats.liveEnabled ? SuperInputStats.liveSummary() : "Live HUD counters off");
+    }
     public static int getRateHz() { return BATCHER.getRateHz(); }
     public static void setRateHz(int rate) {
         BATCHER.setRateHz(rate);
@@ -27,11 +32,12 @@ public final class SuperMouseInput {
     public static void send(SuperMouseBatcher.Sender sender, float x, float y, int kind,
                             boolean down, boolean relative) {
         SuperCameraFrameGen.mouse(x,y,kind,down,relative);
-        if (!enabled && !SuperInputStats.enabled) {
+        if (!enabled && !SuperInputStats.enabled && !SuperInputStats.liveEnabled) {
             sender.sendMouseEvent(x,y,kind,down,relative);
             return;
         }
-        if (SuperInputStats.enabled) SuperInputStats.recordMouseInput(kind,relative);
-        BATCHER.send(sender,x,y,kind,down,relative,Looper.myLooper() == Looper.getMainLooper());
+        boolean mainThread=Looper.myLooper() == Looper.getMainLooper();
+        if (SuperInputStats.enabled || SuperInputStats.liveEnabled) SuperInputStats.recordMouseInput(kind,relative,mainThread);
+        BATCHER.send(sender,x,y,kind,down,relative,mainThread);
     }
 }

@@ -6,10 +6,14 @@ import java.util.Locale;
 public final class SuperInputStats {
     private SuperInputStats() {}
     public static volatile boolean enabled;
+    public static volatile boolean liveEnabled;
+    private static long liveIncoming,liveForwarded,liveAt=System.nanoTime(),liveSampleIn,liveSampleOut;
+    private static double liveInRate,liveOutRate;
     private static long start = System.nanoTime(), stopped = start;
     private static long touchEvents, touchSamples, mouseCalls, mouseMoves;
     private static long wheelCalls, otherCalls, totalNanos, maxNanos;
     private static long incomingMoves, incomingRelativeMoves;
+    private static long mainRelativeMoves, nonMainRelativeMoves;
     private static boolean batchingEnabled, batchingAtStart;
     private static int batchingChanges;
     private static int rateHz = 60, rateAtStart = 60, rateChanges;
@@ -33,6 +37,7 @@ public final class SuperInputStats {
         touchEvents = touchSamples = mouseCalls = mouseMoves = 0;
         wheelCalls = otherCalls = totalNanos = maxNanos = 0;
         incomingMoves = incomingRelativeMoves = 0;
+        mainRelativeMoves = nonMainRelativeMoves = 0;
         batchingAtStart = batchingEnabled;
         batchingChanges = 0;
         rateAtStart = rateHz;
@@ -51,10 +56,31 @@ public final class SuperInputStats {
         rateHz = value;
     }
 
-    public static synchronized void recordMouseInput(int kind, boolean relative) {
-        if (!enabled || kind != 0) return;
+    public static void recordMouseInput(int kind, boolean relative) { recordMouseInput(kind,relative,true); }
+    public static synchronized void recordMouseInput(int kind, boolean relative, boolean mainThread) {
+        if (kind != 0) return;
+        if (liveEnabled) liveIncoming++;
+        if (!enabled) return;
         incomingMoves++;
         if (relative) incomingRelativeMoves++;
+        if (relative && mainThread) mainRelativeMoves++;
+        if (relative && !mainThread) nonMainRelativeMoves++;
+    }
+    public static synchronized void setLiveEnabled(boolean value) {
+        if (value && !liveEnabled) {
+            liveIncoming=liveForwarded=liveSampleIn=liveSampleOut=0;
+            liveInRate=liveOutRate=0; liveAt=System.nanoTime();
+        }
+        liveEnabled=value;
+    }
+    public static synchronized String liveSummary() {
+        long now=System.nanoTime(); double seconds=(now-liveAt)/1e9;
+        if (seconds>=0.5) {
+            liveInRate=(liveIncoming-liveSampleIn)/seconds;
+            liveOutRate=(liveForwarded-liveSampleOut)/seconds;
+            liveSampleIn=liveIncoming; liveSampleOut=liveForwarded; liveAt=now;
+        }
+        return String.format(Locale.US,"Mouse %.0f -> %.0f/s",liveInRate,liveOutRate);
     }
 
     /** One ACTION_MOVE dispatch; samples include history and each pointer. */
@@ -68,6 +94,7 @@ public final class SuperInputStats {
     public static void recordMouse(long began, int kind) {
         long elapsed = System.nanoTime() - began;
         synchronized (SuperInputStats.class) {
+            if (liveEnabled && kind==0) liveForwarded++;
             // Reset/toggle during a native call must not pollute the next session.
             if (!enabled || began < start) return;
             mouseCalls++;
@@ -106,7 +133,7 @@ public final class SuperInputStats {
         sample(now);
         double seconds = Math.max(0, now - start) / 1e9;
         return String.format(Locale.US,
-            "Super Gamehub Lite - Mouse Input Diagnostics v3\n" +
+            "Super Gamehub Lite - Mouse Input Diagnostics v4\n" +
             "Experimental relative mouse batching at start: %s\n" +
             "Batching at report: %s; changes during recording: %d\n" +
             "Selected batching rate at start: %d Hz\n" +
@@ -115,6 +142,7 @@ public final class SuperInputStats {
             "State: %s\nSession duration: %.2f s\n" +
             "Touch move dispatches: %d\nTouch samples (history x pointers): %d\n" +
             "Incoming mouse movement calls: %d\nIncoming relative movement calls: %d\n" +
+            "Main-thread relative calls (eligible): %d\nNon-main relative calls (bypass batching): %d\n" +
             "Native mouse calls: %d\nMouse movement calls: %d\n" +
             "Wheel calls: %d\nOther mouse calls: %d\n" +
             "Session mean touch dispatches/s: %.2f\nSession mean mouse moves/s: %.2f\n" +
@@ -130,7 +158,7 @@ public final class SuperInputStats {
             "No automatic FPS measurement is enabled.\n",
             batchingAtStart ? "ON" : "OFF", batchingEnabled ? "ON" : "OFF", batchingChanges,
             rateAtStart, rateHz, Math.round(1000.0f / rateHz), rateChanges,
-            enabled ? "recording" : "stopped", seconds, touchEvents, touchSamples, incomingMoves, incomingRelativeMoves,
+            enabled ? "recording" : "stopped", seconds, touchEvents, touchSamples, incomingMoves, incomingRelativeMoves, mainRelativeMoves, nonMainRelativeMoves,
             mouseCalls, mouseMoves, wheelCalls, otherCalls,
             seconds == 0 ? 0 : touchEvents / seconds,
             seconds == 0 ? 0 : mouseMoves / seconds, peakMoveRate,

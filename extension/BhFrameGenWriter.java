@@ -18,6 +18,23 @@ import java.nio.channels.FileChannel;
  *   9:   AI multiplier byte (fixed 2x)
  */
 public class BhFrameGenWriter {
+    private static volatile String writeStatus = "No verified control write yet";
+    private static volatile long verifiedWrites, verifiedOnWrites, writeErrors;
+    private static void verified(boolean enabled) {
+        verifiedWrites++; if (enabled) verifiedOnWrites++;
+        writeStatus=(enabled ? "ON" : "OFF")+" (readback OK)";
+    }
+    private static void failed(Exception e) {
+        writeErrors++; writeStatus="ERROR: "+e.getClass().getSimpleName()+": "+e.getMessage();
+        android.util.Log.e("SuperFrameGen","Control write failed",e);
+    }
+    public static String controlStatus() { return writeStatus; }
+    public static String controlCounts() { return "Control ON writes:"+verifiedOnWrites+" errors:"+writeErrors; }
+    public static String controlReport() {
+        return "FG control last write: " + writeStatus + "\nVerified control writes: " + verifiedWrites
+            + " (ON: " + verifiedOnWrites + ")\nControl write errors: " + writeErrors
+            + "\nReadback confirms the control file only; native generated-frame count is unavailable.\n";
+    }
 
     public static void applyFromPrefs(Context ctx) {
         android.content.SharedPreferences prefs = ctx.getSharedPreferences("super_diagnostics",Context.MODE_PRIVATE);
@@ -25,6 +42,7 @@ public class BhFrameGenWriter {
         SuperMouseInput.setRateHz(SuperMouseBatcher.isSupportedRateHz(rate) ? rate : SuperMouseBatcher.DEFAULT_RATE_HZ);
         SuperMouseInput.setEnabled(prefs.getBoolean("batching_enabled",true));
         SuperCameraFrameGen.initialize(ctx);
+        SuperDiagnostics.configureHud(ctx);
         BhFrameGenSettings s = BhFrameGenSettings.load(ctx);
         write(resolveControlPath(ctx), s);
         BhVulkanIcdWriter.ensureIcdJson(ctx);
@@ -48,24 +66,11 @@ public class BhFrameGenWriter {
     }
 
     static synchronized void writeDirect(String controlPath, BhFrameGenSettings s) {
-        if (controlPath == null || controlPath.isEmpty() || s == null) return;
+        if (s == null) { writeErrors++; writeStatus="ERROR: missing settings"; return; }
         try {
-            File f = new File(controlPath);
-            File parent = f.getParentFile();
-            if (parent != null) parent.mkdirs();
-            try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
-                if (raf.length() < 10) raf.setLength(10);
-                FileChannel ch = raf.getChannel();
-                MappedByteBuffer buf = ch.map(FileChannel.MapMode.READ_WRITE, 0, 10);
-                buf.order(ByteOrder.LITTLE_ENDIAN);
-
-                buf.put(2, (byte) (s.enabled ? 1 : 0));
-                buf.putFloat(4, clampFloat(s.flowScale, 0.2f, 1.0f));
-                buf.put(8, (byte) (s.model & 0x01));
-                buf.put(9, (byte) 2);
-                buf.force();
-            }
-        } catch (Exception ignored) {}
+            SuperFrameGenControl.write(controlPath,s.enabled,s.flowScale,s.model);
+            verified(s.enabled);
+        } catch (Exception e) { failed(e); }
     }
 
     public static synchronized void writeEnabled(String controlPath, boolean enabled) {
@@ -86,7 +91,8 @@ public class BhFrameGenWriter {
             buf.order(ByteOrder.LITTLE_ENDIAN);
             buf.putFloat(4, clampFloat(flowScale, 0.2f, 1.0f));
             buf.force();
-        } catch (Exception ignored) {}
+            verified(SuperFrameGenControl.readEnabled(controlPath));
+        } catch (Exception e) { failed(e); }
     }
 
     public static String resolveControlPath(Context ctx) {
@@ -99,7 +105,10 @@ public class BhFrameGenWriter {
             MappedByteBuffer buf = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, 10);
             buf.put(offset, value);
             buf.force();
-        } catch (Exception ignored) {}
+            raf.seek(offset);
+            if (raf.readByte()!=value) throw new java.io.IOException("Control-byte readback mismatch");
+            verified(SuperFrameGenControl.readEnabled(controlPath));
+        } catch (Exception e) { failed(e); }
     }
 
     private static float clampFloat(float v, float lo, float hi) {

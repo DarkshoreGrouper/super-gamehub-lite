@@ -17,6 +17,7 @@ public final class SuperCameraFrameGen {
     private static boolean queued, armed;
     private static volatile boolean enabled;
     private static volatile boolean learning;
+    private static final java.util.concurrent.atomic.AtomicLong activations = new java.util.concurrent.atomic.AtomicLong();
     private static BhFrameGenSettings.Preset preset = BhFrameGenSettings.Preset.FLOW;
     private SuperCameraFrameGen() {}
     public static boolean isEnabled() { return enabled; }
@@ -82,7 +83,7 @@ public final class SuperCameraFrameGen {
             armed = true;
             enabled = prefs(c).getBoolean("camera_fg_enabled",false) && supported(c);
         }
-        MOTION.reset(); configureTrigger(c); learning=false; MAIN.removeCallbacks(EXPIRE);
+        MOTION.reset(); configureTrigger(c); learning=false; activations.set(0); MAIN.removeCallbacks(EXPIRE);
         if (enabled) requestApply();
     }
     public static void setEnabled(Context c, boolean value) {
@@ -107,6 +108,7 @@ public final class SuperCameraFrameGen {
         MOTION.mouse(x,y,kind,down,relative,SystemClock.uptimeMillis());
         boolean after = MOTION.isActive();
         if (before != after) {
+            if (after) activations.incrementAndGet();
             MAIN.removeCallbacks(EXPIRE);
             if (after) MAIN.postDelayed(EXPIRE,SuperCameraMotion.IDLE_MS);
             requestApply();
@@ -155,6 +157,12 @@ public final class SuperCameraFrameGen {
             + "\nCamera FG preset: " + selectedPreset(c).labelFallback
             + "\nCamera FG trigger: " + selectedTrigger(c).name() + "\nLearned trigger: " + keyLabel(c)
             + "\nGate additionally requires nonzero relative movement; 100 ms idle cutoff"
+            + "\nGate activations this game: " + activations + "\n" + MOTION.debugSummary()
+            + "\n" + BhFrameGenWriter.controlReport()
             + "\nCamera FG uses input inference, not game camera-angle telemetry.\n";
+    }
+    public static String hudSummary() {
+        return "FG mode:"+(enabled?"ON":"OFF")+" activations:"+activations+"\n"+MOTION.debugSummary()
+            + "\nFG last control: "+BhFrameGenWriter.controlStatus()+"\n"+BhFrameGenWriter.controlCounts();
     }
 }

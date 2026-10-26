@@ -69,3 +69,12 @@ held/toggle keys, repeat suppression, trigger release, idle expiry, gesture
 end, reset and long streams. All extensions compile against Android 34. Native
 key wrappers forward the original arguments, order and return value; their
 Smali is assembled locally before the full signed APK build in CI.
+
+## Runtime evidence
+
+Enable Diagnostics HUD in SUPER to observe mouse button state, gate state and
+activation counts while recording is off. Frame-generation control writes now
+verify file readback and expose success/error counters and the last result in
+both the HUD and copied reports. File I/O remains on the background worker for
+the automatic gate. Readback is evidence of a control-file write, not a native
+renderer frame counter. The app still cannot confirm generated/displayed FPS.
