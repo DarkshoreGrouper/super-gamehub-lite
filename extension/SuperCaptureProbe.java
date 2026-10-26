@@ -3,16 +3,17 @@ package com.xj.winemu.sidebar;
 import android.content.Context;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.ArrayDeque;
 
 /** Opt-in, bounded diagnostic observer. No input injection or batching decisions. */
 public final class SuperCaptureProbe {
     private static volatile boolean enabled;
     private static volatile int generation;
-    private static volatile String rootPath, filesPath;
+    private static volatile String rootPath, filesPath, tmpPath;
+    private static volatile String connectedEndpoint="none", attempts="none";
+    private static final ArrayDeque<String> failures=new ArrayDeque<>();
     private static volatile String status="off", recordStatus="not connected";
     private static volatile SuperCaptureSignals signals=new SuperCaptureSignals();
     private static final ArrayList<LocalSocket> sockets=new ArrayList<>();
@@ -20,6 +21,11 @@ public final class SuperCaptureProbe {
     public static boolean isEnabled() { return enabled; }
     public static synchronized void runtimeRoot(String root) {
         rootPath=root;
+        if(enabled) restart();
+    }
+    public static synchronized void runtimeTmp(String path) {
+        if(path==null || path.equals(tmpPath)) return;
+        tmpPath=path;
         if(enabled) restart();
     }
     public static synchronized void setEnabled(Context c,boolean value) {
@@ -33,7 +39,8 @@ public final class SuperCaptureProbe {
         for(LocalSocket s:sockets) try { s.close(); } catch(IOException ignored) {}
         sockets.clear();
         if(!enabled) { status="off"; recordStatus="stopped"; return; }
-        signals=new SuperCaptureSignals(); status="connecting"; recordStatus="connecting";
+        signals=new SuperCaptureSignals(); status="connecting"; recordStatus="waiting for X11 connection";
+        connectedEndpoint="none"; attempts="none"; failures.clear();
         Thread worker=new Thread(() -> run(token),"Super-X11-probe"); worker.setDaemon(true); worker.start();
     }
     private static boolean active(int token) { return enabled && generation==token; }
@@ -41,36 +48,57 @@ public final class SuperCaptureProbe {
         if(!active(token)) { socket.close(); throw new IOException("Probe stopped"); }
         sockets.add(socket);
     }
-    private static String[] candidates() {
-        LinkedHashSet<String> paths=new LinkedHashSet<>();
-        for(String root:new String[]{rootPath,filesPath==null?null:filesPath+"/usr",filesPath}) if(root!=null) {
-            paths.add(root+"/tmp/.X11-unix/X0"); paths.add(root+"/.X11-unix/X0");
-            paths.add(root+"/var/tmp/.X11-unix/X0");
-        }
-        return paths.toArray(new String[0]);
+    private static synchronized void failed(int token,SuperX11Endpoints.Endpoint endpoint,Exception error) {
+        if(!active(token)) return;
+        if(failures.size()==12) failures.removeFirst();
+        failures.addLast(endpoint+": "+error.getClass().getSimpleName()+": "+error.getMessage());
     }
-    private static LocalSocket connect(String path,int token) throws IOException {
+    private static synchronized String failureSummary() {
+        StringBuilder out=new StringBuilder();
+        for(String failure:failures) out.append("\n").append(failure);
+        return out.toString();
+    }
+    private static void closeSocket(LocalSocket s) {
+        if(s==null) return;
+        try { s.close(); } catch(IOException ignored) {}
+        synchronized(SuperCaptureProbe.class) { sockets.remove(s); }
+    }
+    private static LocalSocket connect(SuperX11Endpoints.Endpoint endpoint,int token) throws IOException {
         LocalSocket s=new LocalSocket(); track(s,token);
-        try { s.setSoTimeout(1500); s.connect(new LocalSocketAddress(path,LocalSocketAddress.Namespace.FILESYSTEM)); return s; }
+        try {
+            // LocalSocket creates its descriptor during connect(), not construction.
+            s.connect(new LocalSocketAddress(endpoint.name,endpoint.abstractSocket?LocalSocketAddress.Namespace.ABSTRACT:LocalSocketAddress.Namespace.FILESYSTEM));
+            s.setSoTimeout(1500);
+            return s;
+        }
         catch(IOException e) { s.close(); synchronized(SuperCaptureProbe.class) { sockets.remove(s); } throw e; }
     }
     private static void run(int token) {
         LocalSocket cursorSocket=null, recordSocket=null;
         SuperCaptureSignals observed=signals;
         try {
-            String endpoint=null;
-            for(int attempt=0;attempt<20 && active(token) && cursorSocket==null;attempt++) {
-                for(String candidate:candidates()) {
-                    if(!new File(candidate).exists()) continue;
-                    try { cursorSocket=connect(candidate,token); endpoint=candidate; break; }
-                    catch(IOException ignored) {}
+            SuperX11Endpoints.Endpoint endpoint=null;
+            SuperX11Protocol cursor=null;
+            int tried=0;
+            for(int attempt=0;attempt<8 && active(token) && cursorSocket==null;attempt++) {
+                for(SuperX11Endpoints.Endpoint candidate:SuperX11Endpoints.candidates(rootPath,filesPath,tmpPath)) {
+                    if(!active(token)) return;
+                    LocalSocket trial=null;
+                    try {
+                        tried++; attempts="attempt "+tried+": "+candidate;
+                        trial=connect(candidate,token);
+                        SuperX11Protocol protocol=new SuperX11Protocol(trial.getInputStream(),trial.getOutputStream());
+                        protocol.setup(); // A connected socket alone is not a validated X11 connection.
+                        cursorSocket=trial; cursor=protocol; endpoint=candidate;
+                        if(active(token)) connectedEndpoint=candidate.toString();
+                        break;
+                    } catch(IOException e) { failed(token,candidate,e); closeSocket(trial); }
                 }
-                if(cursorSocket==null) Thread.sleep(250);
+                if(cursorSocket==null) Thread.sleep(500);
             }
             if(!active(token)) return;
-            if(cursorSocket==null) throw new IOException("X0 socket not found/connectable; toggle probe off/on after game starts");
-            SuperX11Protocol cursor=new SuperX11Protocol(cursorSocket.getInputStream(),cursorSocket.getOutputStream());
-            cursor.setup(); int fixes=cursor.extension("XFIXES");
+            if(cursorSocket==null) throw new IOException("No X0 endpoint completed X11 handshake; see endpoint attempts below");
+            int fixes=cursor.extension("XFIXES");
             if(fixes!=0) cursor.version(fixes,false);
             observed.setFixes(fixes);
             SuperX11Protocol recorder=null;
@@ -107,7 +135,10 @@ public final class SuperCaptureProbe {
                 Thread.sleep(25);
             }
         } catch(Exception e) {
-            if(active(token)) status="unavailable: "+e.getClass().getSimpleName()+": "+e.getMessage();
+            if(active(token)) {
+                status="unavailable: "+e.getClass().getSimpleName()+": "+e.getMessage();
+                recordStatus="not started: X11 connection unavailable";
+            }
         } finally {
             for(LocalSocket s:new LocalSocket[]{cursorSocket,recordSocket}) if(s!=null) {
                 try { s.close(); } catch(IOException ignored) {}
@@ -120,6 +151,6 @@ public final class SuperCaptureProbe {
     }
     public static String summary() {
         return "NATIVE CAMERA PROBE: "+(enabled?"ON":"OFF")+"\n"+status+"\nRECORD: "+recordStatus
-            +"\n"+signals.summary()+"\n"+signals.history()+"\nEvidence only: not a camera-mode detector yet.\nCounts cover all X11 clients since probe enabled, not just this recording.\nInitial grab/hide state and implicit/XInput grabs are not established; cursor alpha is not visibility.";
+            +"\nConnected endpoint: "+connectedEndpoint+"\nRuntime root: "+rootPath+"\nApp files: "+filesPath+"\nRuntime TMPDIR: "+tmpPath+"\nEndpoint search: "+attempts+failureSummary()+"\n"+signals.summary()+"\n"+signals.history()+"\nEvidence only: not a camera-mode detector yet.\nCounts cover all X11 clients since probe enabled, not just this recording.\nInitial grab/hide state and implicit/XInput grabs are not established; cursor alpha is not visibility.";
     }
 }

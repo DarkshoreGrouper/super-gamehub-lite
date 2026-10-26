@@ -65,7 +65,9 @@ jobs:
           java -cp stats-tests SuperFrameGenControlTest
 
       - name: Test APK version metadata
-        run: python3 -m unittest discover -s tests -p 'test_apk_version.py'
+        run: |
+          python3 -m unittest discover -s tests -p 'test_apk_version.py'
+          python3 -m unittest discover -s tests -p 'test_capture_transport.py'
 
       - name: Install apktool
         run: |
