@@ -114,6 +114,7 @@ jobs:
           BUILD_TOOLS=$(ls "$ANDROID_SDK_ROOT/build-tools" | sort -V | tail -1)
           "$ANDROID_SDK_ROOT/build-tools/$BUILD_TOOLS/d8" \
             --release \
+            --lib "$ANDROID_JAR" \
             --output ext_dex \
             $(find ext_classes -name '*.class')
 

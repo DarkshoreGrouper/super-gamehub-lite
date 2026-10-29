@@ -428,7 +428,7 @@ compile_extension_dex() {
 
     javac -source 8 -target 8 -cp "$android_jar" -d "$ext_build_dir/classes" "$src_dir"/*.java
     # shellcheck disable=SC2046
-    "$d8_bin" --release --output "$ext_build_dir/dex" $(find "$ext_build_dir/classes" -name '*.class')
+    "$d8_bin" --release --lib "$android_jar" --output "$ext_build_dir/dex" $(find "$ext_build_dir/classes" -name '*.class')
 
     if [ ! -f "$ext_build_dir/dex/classes.dex" ]; then
         print_error "d8 did not produce classes.dex"
