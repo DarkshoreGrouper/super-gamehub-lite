@@ -15,7 +15,7 @@
      <uses-permission android:name="android.permission.VIBRATE"/>
      <uses-permission android:name="android.hardware.usb.host"/>
      <uses-permission android:name="android.permission.WRITE_MEDIA_STORAGE"/>
-@@ -21,51 +20,21 @@
+@@ -21,51 +20,22 @@
      <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
      <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
      <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
@@ -28,6 +28,7 @@
      <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
 -    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 -    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
++    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
      <uses-permission android:name="android.permission.BLUETOOTH"/>
      <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation"/>
 -    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE"/>
@@ -67,7 +68,7 @@
      <uses-permission android:maxSdkVersion="33" android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
      <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
      <uses-feature android:name="android.hardware.wifi" android:required="false"/>
-@@ -75,28 +44,13 @@
+@@ -75,28 +45,13 @@
      <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false"/>
      <uses-feature android:name="android.hardware.sensor.gyroscope" android:required="false"/>
      <uses-feature android:name="android.hardware.type.pc" android:required="false"/>
@@ -101,7 +102,7 @@
          <meta-data android:name="ScopedStorage" android:value="true"/>
          <activity android:exported="true" android:name="com.xj.app.SplashActivity" android:screenOrientation="sensorLandscape" android:theme="@style/AppTheme_Splash"/>
          <activity android:exported="true" android:name="com.xj.app.DeepLinkRouterActivity" android:theme="@style/AppTheme_Splash">
-@@ -112,16 +66,6 @@
+@@ -112,16 +67,6 @@
                  <data android:host="gamehub" android:scheme="gamesir"/>
              </intent-filter>
          </activity>
@@ -118,7 +119,7 @@
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:launchMode="singleTask" android:name="com.xj.landscape.launcher.ui.main.LandscapeLauncherMainActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:launchMode="singleTask" android:name="com.xj.landscape.launcher.ui.guide.GuideButtonAActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:exported="true" android:launchMode="singleTask" android:name="com.xj.landscape.launcher.ui.guide.GuideLoginActivity" android:screenOrientation="sensorLandscape" android:theme="@style/llauncher_LoginPageTranslucentStyle"/>
-@@ -134,22 +78,12 @@
+@@ -134,22 +79,12 @@
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.guide.GuideKeypadOperationActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.guide.GuiRequestReadContactsPermissionActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.guide.GuideFindContactActivity" android:screenOrientation="sensorLandscape"/>
@@ -141,7 +142,7 @@
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:launchMode="singleTask" android:name="com.xj.landscape.launcher.ui.record.RecordMainActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.record.CutVideoActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.record.EditorVideoActivity" android:screenOrientation="sensorLandscape"/>
-@@ -164,7 +98,12 @@
+@@ -164,7 +99,12 @@
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.device.SelectDeviceActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenSize" android:name="com.xj.landscape.launcher.ui.device.ScanDeviceActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.device.ProductDocActivity" android:screenOrientation="sensorLandscape"/>
@@ -155,7 +156,7 @@
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.gamedetail.NewsDetailActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.gamedetail.GameDetailMoreInfoActivity" android:screenOrientation="sensorLandscape" android:theme="@style/llauncher_TranslucentStyle"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.gamedetail.PreviewPictureActivity" android:screenOrientation="sensorLandscape"/>
-@@ -180,7 +119,7 @@
+@@ -180,7 +120,7 @@
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.search.V4SearchActivity" android:screenOrientation="sensorLandscape" android:theme="@style/llauncher_TranslucentStyle" android:windowSoftInputMode="adjustPan"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.album.AlbumDetailActivity" android:screenOrientation="sensorLandscape" android:windowSoftInputMode="adjustPan"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.test.AudioViewEditorTestActivity" android:screenOrientation="sensorLandscape"/>
@@ -164,7 +165,7 @@
          <activity android:enabled="true" android:exported="false" android:launchMode="singleTask" android:name="com.xj.landscape.launcher.devicemanagement.PermissionsActivity" android:noHistory="true" android:screenOrientation="sensorLandscape" android:theme="@style/TransparentActivityTheme">
              <intent-filter>
                  <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"/>
-@@ -188,9 +127,6 @@
+@@ -188,9 +128,6 @@
              <meta-data android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" android:resource="@xml/device_filter"/>
          </activity>
          <activity android:name="com.xj.landscape.launcher.ui.social.UserInfoActivity" android:screenOrientation="sensorLandscape" android:theme="@style/ActivityTranslucent"/>
@@ -174,7 +175,7 @@
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.guide.GuideNotConnectGamePadActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.luck.picture.lib.basic.PictureSelectorSupporterActivity" android:screenOrientation="sensorLandscape" android:theme="@style/Base.Theme.NoActionBar"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.notification.CommonFragmentActivity" android:screenOrientation="sensorLandscape" android:theme="@style/ActivityTranslucent"/>
-@@ -201,7 +137,7 @@
+@@ -201,7 +138,7 @@
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.guide.GuideCreateInfoActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.landscape.launcher.ui.preview.PreviewImageActivity" android:screenOrientation="sensorLandscape"/>
          <service android:name="com.xj.apk.update.service.DownloadService"/>
@@ -183,7 +184,7 @@
              <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/app_update_file"/>
          </provider>
          <activity android:configChanges="keyboardHidden|orientation|screenSize" android:name="com.xj.apk.update.view.UpdateDialogActivity" android:theme="@style/AppUpdate.UpdateDialog"/>
-@@ -210,7 +146,7 @@
+@@ -210,7 +147,7 @@
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenSize" android:name="com.xj.devicesetting.gamepad.GamePadTestActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenSize" android:name="com.xj.devicesetting.gamepad.StretchHandleTestActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenSize" android:name="com.xj.devicesetting.gamepad.GamePadCalibrationActivity" android:screenOrientation="sensorLandscape"/>
@@ -192,7 +193,7 @@
              <intent-filter>
                  <category android:name="android.intent.category.DEFAULT"/>
              </intent-filter>
-@@ -245,11 +181,10 @@
+@@ -245,11 +182,13 @@
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenSize" android:name="com.xj.ota.ui.G8TypeCOtaActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenSize" android:name="com.xj.ota.ui.X5sOTAActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale" android:label="@string/app_name" android:name="com.xj.ota.ui.FileActivity" android:screenOrientation="portrait"/>
@@ -201,6 +202,9 @@
 -        <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.cloud.ui.ExchangeActivity" android:screenOrientation="sensorLandscape" android:windowSoftInputMode="adjustPan"/>
 -        <activity android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize" android:launchMode="singleInstance" android:name="com.xj.bussiness.devicemanagement.XboxWebActivity" android:resizeableActivity="true" android:screenOrientation="userLandscape" android:supportsPictureInPicture="true"/>
 -        <activity android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|density|layoutDirection|fontScale" android:launchMode="singleTask" android:name="com.xj.winemu.WineActivity" android:process=":wine" android:screenOrientation="sensorLandscape" android:theme="@style/Theme.WineUI" android:windowSoftInputMode="adjustNothing|stateHidden"/>
++        <service android:name="com.xj.winemu.sidebar.SuperBackgroundService" android:exported="false" android:process=":wine" android:foregroundServiceType="specialUse" android:stopWithTask="true">
++            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled background execution of an active local Wine game to preserve its live multiplayer connection while switching apps; stops when the game exits."/>
++        </service>
 +        <activity android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|density|layoutDirection|fontScale" android:enableOnBackInvokedCallback="false" android:launchMode="singleTask" android:name="com.xj.winemu.WineActivity" android:preferMinimalPostProcessing="true" android:process=":wine" android:resizeableActivity="false" android:screenOrientation="sensorLandscape" android:theme="@style/Theme.WineUI" android:windowSoftInputMode="adjustNothing|stateHidden">
 +            <meta-data android:name="com.nvidia.immediateInput" android:value="true"/>
 +            <meta-data android:name="com.nvidia.rawCursorInput" android:value="true"/>
@@ -208,7 +212,7 @@
          <activity android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize" android:name="com.xj.winemu.settings.PcGameSettingsActivity" android:screenOrientation="sensorLandscape" android:windowSoftInputMode="stateHidden|adjustPan"/>
          <activity android:configChanges="orientation" android:name="com.xj.winemu.ui.gamelibrary.env.ui.EnvLayerDetailActivity" android:screenOrientation="sensorLandscape"/>
          <service android:exported="false" android:name="com.xj.winemu.download.service.UnzipService"/>
-@@ -260,99 +195,18 @@
+@@ -260,99 +199,18 @@
          <activity android:configChanges="orientation" android:name="com.xj.winemu.settings.translations.WinEmuTranslationParametersActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="orientation" android:name="com.xj.winemu.settings.translations.WinEmuTranslationConfigEditActivity" android:screenOrientation="sensorLandscape"/>
          <activity android:configChanges="orientation" android:name="com.xj.winemu.settings.translations.GameTranslationParametersActivity" android:screenOrientation="sensorLandscape"/>
@@ -310,7 +314,7 @@
          <receiver android:enabled="true" android:exported="false" android:name="com.xj.muugi.shortcut.special.AutoCreateBroadcastReceiver">
              <intent-filter>
                  <action android:name="com.shortcut.core.auto_create"/>
-@@ -367,40 +221,20 @@
+@@ -367,40 +225,20 @@
          <activity android:configChanges="keyboardHidden|orientation|screenSize" android:name="com.yalantis.ucrop.UCropMultipleActivity" android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
          <meta-data android:name="android.notch_support" android:value="true"/>
          <activity android:name="com.lxj.xpopup.util.XPermission$PermissionActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
@@ -355,7 +359,7 @@
              <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/util_code_provider_paths"/>
          </provider>
          <service android:exported="false" android:name="com.blankj.utilcode.util.MessengerUtils$ServerService">
-@@ -408,104 +242,22 @@
+@@ -408,104 +246,22 @@
                  <action android:name="com.xiaoji.egggame.messenger"/>
              </intent-filter>
          </service>
@@ -409,15 +413,11 @@
 -        <activity android:configChanges="locale|keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|density|layoutDirection|fontScale" android:exported="false" android:name="com.alipay.sdk.app.H5OpenAuthActivity" android:screenOrientation="behind" android:windowSoftInputMode="stateHidden|adjustResize"/>
 -        <activity android:configChanges="locale|keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|density|layoutDirection|fontScale" android:exported="false" android:name="com.alipay.sdk.app.APayEntranceActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
 -        <activity android:exported="true" android:name="cn.jpush.android.ui.PopWinActivity" android:theme="@style/JPushDialogStyle">
-+        <activity android:label="@string/adb_pairing" android:name="com.xiaoji.wifi.adb.AdbPairingTutorialActivity"/>
-+        <activity android:excludeFromRecents="true" android:exported="true" android:name="bin.mt.file.content.MTDataFilesWakeUpActivity" android:noHistory="true" android:taskAffinity="com.xiaoji.egggame.MTDataFilesWakeUp"/>
-+        <provider android:authorities="super.gamehub.lite.MTDataFilesProvider" android:exported="true" android:grantUriPermissions="true" android:name="bin.mt.file.content.MTDataFilesProvider" android:permission="android.permission.MANAGE_DOCUMENTS">
-             <intent-filter>
+-            <intent-filter>
 -                <category android:name="android.intent.category.DEFAULT"/>
 -                <action android:name="cn.jpush.android.ui.PopWinActivity"/>
 -                <category android:name="com.xiaoji.egggame"/>
-+                <action android:name="android.content.action.DOCUMENTS_PROVIDER"/>
-             </intent-filter>
+-            </intent-filter>
 -        </activity>
 -        <activity android:configChanges="keyboardHidden|orientation" android:exported="true" android:name="cn.jpush.android.ui.PushActivity" android:theme="@android:style/Theme.NoTitleBar">
 -            <intent-filter>
@@ -461,8 +461,13 @@
 -        <meta-data android:name="JPUSH_CHANNEL" android:value="default"/>
 -        <meta-data android:name="JPUSH_APPKEY" android:value="fdeb83da9ad2f3e16b983fde"/>
 -        <provider android:authorities="com.xiaoji.egggame.jiguang.InitProvider" android:exported="false" android:name="cn.jpush.android.service.InitProvider" android:readPermission="com.xiaoji.egggame.permission.JPUSH_MESSAGE" android:writePermission="com.xiaoji.egggame.permission.JPUSH_MESSAGE"/>
--        <activity android:label="@string/adb_pairing" android:name="com.xiaoji.wifi.adb.AdbPairingTutorialActivity"/>
+         <activity android:label="@string/adb_pairing" android:name="com.xiaoji.wifi.adb.AdbPairingTutorialActivity"/>
 -        <service android:enabled="true" android:exported="false" android:foregroundServiceType="connectedDevice" android:name="com.xiaoji.wifi.adb.AdbPairingService"/>
++        <activity android:excludeFromRecents="true" android:exported="true" android:name="bin.mt.file.content.MTDataFilesWakeUpActivity" android:noHistory="true" android:taskAffinity="com.xiaoji.egggame.MTDataFilesWakeUp"/>
++        <provider android:authorities="super.gamehub.lite.MTDataFilesProvider" android:exported="true" android:grantUriPermissions="true" android:name="bin.mt.file.content.MTDataFilesProvider" android:permission="android.permission.MANAGE_DOCUMENTS">
++            <intent-filter>
++                <action android:name="android.content.action.DOCUMENTS_PROVIDER"/>
++            </intent-filter>
 +        </provider>
      </application>
  </manifest>

@@ -17,6 +17,8 @@ once, future signed builds can update Super in place. See
 
 The **SUPER** in-game sidebar tab contains opt-in input diagnostics. See
 [how to measure and copy a report](docs/input-diagnostics.md).
+It also offers [background game connectivity mode](docs/background-game.md), with
+an optional CPU wake lock and a temporary GameScopeVK background FPS cap.
 The camera optimizer is planned, not implemented or proven.
 
 ---

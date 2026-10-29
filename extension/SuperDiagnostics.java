@@ -211,6 +211,7 @@ public final class SuperDiagnostics {
         private final Switch hudToggle;
         private final Switch cameraToggle;
         private final TextView cameraStatus;
+        private final TextView backgroundStatus;
         private final Button learnTrigger;
         private final Button resetTrigger;
         private final View reportsHeader;
@@ -238,6 +239,25 @@ public final class SuperDiagnostics {
             TextView title = text(c,"Super Gamehub Lite",20);
             title.setTextColor(CYAN); title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
             column.addView(title);
+            Switch backgroundToggle = new Switch(c);
+            backgroundToggle.setText("Keep game online when switching apps");
+            backgroundToggle.setTextColor(Color.WHITE);
+            backgroundToggle.setChecked(SuperBackground.enabled(c));
+            column.addView(backgroundToggle,new LinearLayout.LayoutParams(-1,-2));
+            backgroundToggle.setOnCheckedChangeListener((button,checked) -> { SuperBackground.setEnabled(c,checked); refresh(); });
+            Switch cpuToggle = new Switch(c);
+            cpuToggle.setText("Keep CPU awake while away (more battery)");
+            cpuToggle.setTextColor(Color.WHITE);
+            cpuToggle.setChecked(SuperBackground.cpuEnabled(c));
+            column.addView(cpuToggle,new LinearLayout.LayoutParams(-1,-2));
+            cpuToggle.setOnCheckedChangeListener((button,checked) -> { SuperBackground.setCpuEnabled(c,checked); refresh(); });
+            backgroundStatus = text(c,"",12);
+            column.addView(backgroundStatus);
+            column.addView(text(c,"Background mode keeps your active game running with a notification. GameScopeVK gets a temporary 5 FPS cap; your normal limit returns when you come back. Actual background FPS depends on the game/driver. The CPU option helps with screen-off sleep and increases battery use. Android battery restrictions and server inactivity logout still apply. Exit the game or turn off background mode to stop it.",12));
+            Button copyBackground = new Button(c);
+            copyBackground.setText("Copy background diagnostics");
+            copyBackground.setOnClickListener(v -> copyReport(c,SuperBackground.report(c)));
+            column.addView(copyBackground,new LinearLayout.LayoutParams(-1,-2));
             hudToggle=new Switch(c);
             hudToggle.setText("Diagnostics HUD"); hudToggle.setTextColor(Color.WHITE); hudToggle.setChecked(hudEnabled);
             column.addView(hudToggle,new LinearLayout.LayoutParams(-1,dp(c,52)));
@@ -407,6 +427,7 @@ public final class SuperDiagnostics {
             refresh();
         }
         void refresh() {
+            backgroundStatus.setText(SuperBackground.summary(getContext()));
             if (cameraToggle.isChecked() != SuperCameraFrameGen.isEnabled()) cameraToggle.setChecked(SuperCameraFrameGen.isEnabled());
             boolean keyTrigger = SuperCameraFrameGen.selectedTrigger(getContext()) == SuperCameraMotion.Trigger.KEY_HELD
                 || SuperCameraFrameGen.selectedTrigger(getContext()) == SuperCameraMotion.Trigger.KEY_TOGGLE;
@@ -441,7 +462,7 @@ public final class SuperDiagnostics {
         String version = "unknown";
         try { version = c.getPackageManager().getPackageInfo(c.getPackageName(),0).versionName; }
         catch (android.content.pm.PackageManager.NameNotFoundException ignored) {}
-        return SuperInputStats.report() + "\n"+SuperMouseInput.liveSummary()+"\n" + SuperCameraFrameGen.summary(c) + "\nDevice: " + Build.MANUFACTURER + " " + Build.MODEL
+        return SuperInputStats.report() + "\n"+SuperMouseInput.liveSummary()+"\n" + SuperCameraFrameGen.summary(c) + "\n" + SuperBackground.report(c) + "\nDevice: " + Build.MANUFACTURER + " " + Build.MODEL
             + "\nAndroid: " + Build.VERSION.RELEASE + "\nApp: " + c.getPackageName() + " " + version;
     }
 

@@ -624,6 +624,7 @@ main() {
     apply_patches
     apply_binary_replacements
     apply_additions
+    python3 "$SCRIPT_DIR/tools/verify-background-patches.py" "$WORK_DIR/decompiled"
     apply_super_version
 
     if [ "$RELEASE" = "true" ]; then

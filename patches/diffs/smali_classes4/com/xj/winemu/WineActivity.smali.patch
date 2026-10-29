@@ -258,21 +258,41 @@
      return-void
  .end method
  
-@@ -4108,6 +4278,8 @@
+@@ -4108,6 +4278,10 @@
      .locals 10
  
      invoke-super {p0, p1}, Lcom/xj/common/view/focus/focus/app/FocusableAppCompatActivity;->onCreate(Landroid/os/Bundle;)V
++
++    invoke-static {p0}, Lcom/xj/winemu/sidebar/SuperBackground;->attach(Landroid/app/Activity;)V
 +
 +    invoke-static {p0}, Lcom/xj/winemu/sidebar/BhFrameGenWriter;->applyFromPrefs(Landroid/content/Context;)V
  
      invoke-virtual {p0}, Lcom/xj/winemu/WineActivity;->S2()V
  
-@@ -5126,6 +5298,8 @@
- 
+@@ -5127,6 +5301,8 @@
  .method public onDestroy()V
      .locals 1
-+
-+    invoke-static {}, Lcom/xj/winemu/sidebar/SuperDiagnostics;->stop()V
  
++    invoke-static {}, Lcom/xj/winemu/sidebar/SuperDiagnostics;->stop()V
++
      invoke-virtual {p0}, Lcom/xj/winemu/WineActivity;->x2()V
+ 
+     :try_start_0
+@@ -5168,7 +5344,17 @@
+     const/4 v0, 0x0
+ 
+     :cond_0
++    invoke-static {}, Lcom/xj/winemu/sidebar/SuperBackground;->keepRunning()Z
++
++    move-result v0
++
++    if-nez v0, :super_keep_online
++
++    iget-object v0, p0, Lcom/xj/winemu/WineActivity;->h:Lcom/winemu/openapi/WinUIBridge;
++
+     invoke-virtual {v0}, Lcom/winemu/openapi/WinUIBridge;->Y()V
++
++    :super_keep_online
+     :try_end_0
+     .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
  
